@@ -2,6 +2,9 @@ import type { ObfuscationConfig, ObfuscationConfigInput } from "../types/config.
 import { DEFAULT_OBFUSCATION_CONFIG } from "./defaults.js";
 import { isLogLevel, isNumberObfuscationOperator } from "./guards.js";
 
+/**
+ * Fills a partial user config with Veyl defaults and validates the result.
+ */
 export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig {
     const merged: ObfuscationConfig = {
         log_level: input?.log_level ?? DEFAULT_OBFUSCATION_CONFIG.log_level,
@@ -27,6 +30,12 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
     return merged;
 }
 
+/**
+ * Deep-merges two partial configs.
+ *
+ * Values in `override` take precedence over `base`, which is useful for
+ * applying CLI flags on top of config file values.
+ */
 export function mergeConfig(
     base: ObfuscationConfigInput,
     override: ObfuscationConfigInput,

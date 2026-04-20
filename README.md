@@ -1,7 +1,13 @@
 # Veyl
 A standalone TS/JS obfuscator made for my AP CSP create task.
 
-## Usage
+## Installation
+```sh
+pnpm i -g veyl
+```
+
+### Install From Source
+
 1. Clone the repo
 ```sh
 git clone https://github.com/skylvie/veyl
@@ -69,7 +75,77 @@ You can also use CLI flags instead:
 --log-level=none|error|info|debug
 ```
 
+## Package API
+Veyl can also be imported by other Node projects as an ESM package:
+
+```ts
+import {
+    obfuscateCode,
+    obfuscateFile,
+    resolveConfig,
+    type ObfuscateCodeResult,
+    type ObfuscationConfigInput,
+    type ObfuscationStats,
+} from "veyl";
+```
+
+### Obfuscate a file
+```ts
+import { obfuscateFile } from "veyl";
+
+const stats = await obfuscateFile({
+    input: "./src/index.ts",
+    output: "./dist/index.obfuscated.js",
+    config: {
+        features: {
+            obfuscate: {
+                strings: true,
+                numbers: true,
+                booleans: true,
+            },
+            randomized_unique_identifiers: true,
+            unnecessary_depth: true,
+        },
+        options: {
+            boolean_number: null,
+            number_offset: null,
+            number_operator: null,
+        },
+    },
+});
+
+console.log(stats.output, stats.outputBytes);
+```
+
+### Obfuscate Code Directly
+```ts
+import { obfuscateCode } from "veyl";
+
+const result = obfuscateCode("const answer = 42; console.log(answer);", {
+    features: {
+        obfuscate: {
+            strings: false,
+            numbers: true,
+            booleans: true,
+        },
+    },
+});
+
+console.log(result.code);
+```
+
+### Public exports
+- `obfuscateFile(opts)`: bundles an input TS/JS file, obfuscates it, writes output, and returns `ObfuscationStats`.
+- `obfuscateCode(input, config?)`: obfuscates an already-bundled JavaScript string and returns `ObfuscateCodeResult`.
+- `resolveConfig(config?)`: fills a partial config with Veyl defaults.
+- `mergeConfig(base, override)`: merges config file values with overrides.
+- `loadConfigFile(path)`: reads a config JSON file.
+- `loadDefaultConfigFile(cwd)`: reads `veyl_config.json` from a directory when present.
+- `DEFAULT_CONFIG_FILE` and `DEFAULT_OBFUSCATION_CONFIG`.
+- Types: `ObfuscationConfigInput`, `ObfuscationConfig`, `ObfuscationStats`, `ObfuscateFileOptions`, `ObfuscateCodeResult`, `LogLevel`, and `NumberObfuscationOperator`.
+
 ## Testing
+Make sure you're cloned into the repo first (and have ran `pnpm i`) first! Additionally, the test script only supports UNIX based shells, so no Windows nonsense.
 ```sh
 pnpm test
 ```
@@ -85,15 +161,6 @@ chmod +x ./run.sh
 ./run.sh --rm-js # Remove JS files
 ```
 
-## AP CSP Create Task Evidence
-The code includes the required elements:
-- Input from a file: `obfuscateFile` receives the `-i` path and esbuild reads that entry file.
-- Output: `obfuscateFile` writes the `-o` file and the CLI prints status text.
-- List: `OPTION_DEFINITIONS` stores the supported CLI options in one list.
-- Student-developed procedure: `parseCliArgs(argv)` has a parameter, return type, sequencing, selection, and iteration.
-- Procedure call: `src/cli.ts` calls `parseCliArgs(process.argv.slice(2))`.
-- The same list is used by both `parseCliArgs` and `buildHelpText`, which makes option changes easier to maintain.
-
 ## How It Works
 Veyl starts by sending the input TS or JS file through [esbuild](https://esbuild.github.io/). esbuild transpiles TS, follows local imports, bundles the program into one ESM JS file, and tree-shakes code that is not used.
 
@@ -107,3 +174,12 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
 
 Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. Finally, esbuild minifies the transformed JS while preserving the randomized identifiers.
+
+## AP CSP Create Task Evidence
+The code includes the required elements:
+- Input from a file: `obfuscateFile` receives the `-i` path and esbuild reads that entry file.
+- Output: `obfuscateFile` writes the `-o` file and the CLI prints status text.
+- List: `OPTION_DEFINITIONS` stores the supported CLI options in one list.
+- Student-developed procedure: `parseCliArgs(argv)` has a parameter, return type, sequencing, selection, and iteration.
+- Procedure call: `src/cli.ts` calls `parseCliArgs(process.argv.slice(2))`.
+- The same list is used by both `parseCliArgs` and `buildHelpText`, which makes option changes easier to maintain.

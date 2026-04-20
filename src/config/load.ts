@@ -4,6 +4,12 @@ import { isLogLevel, isNumberObfuscationOperator, isPlainObject } from "./guards
 import fs from "node:fs";
 import path from "node:path";
 
+/**
+ * Reads and validates a Veyl JSON config file from disk.
+ *
+ * The returned object is still partial; pass it to `resolveConfig` to fill
+ * defaults.
+ */
 export function loadConfigFile(configPath: string): ObfuscationConfigInput {
     const raw = fs.readFileSync(configPath, "utf-8");
     const parsed: unknown = JSON.parse(raw);
@@ -39,6 +45,11 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
     };
 }
 
+/**
+ * Reads `veyl_config.json` from `cwd` when present.
+ *
+ * Returns an empty config object when the default file does not exist.
+ */
 export function loadDefaultConfigFile(cwd: string): ObfuscationConfigInput {
     const configPath = path.resolve(cwd, DEFAULT_CONFIG_FILE);
 

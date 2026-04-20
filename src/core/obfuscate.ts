@@ -13,6 +13,12 @@ import path from "node:path";
 import type { ObfuscationConfigInput } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
 
+/**
+ * Bundles a TypeScript or JavaScript entry file, obfuscates the bundled output,
+ * writes the result to disk, and returns run statistics.
+ *
+ * This is the primary file-based API for using Veyl from another Node project.
+ */
 export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<ObfuscationStats> {
     const startedAt = performance.now();
     const input = path.resolve(opts.input);
@@ -44,6 +50,13 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
     };
 }
 
+/**
+ * Obfuscates an already-bundled JavaScript source string and returns the
+ * transformed code plus transformation statistics.
+ *
+ * Use `obfuscateFile` instead when Veyl should handle esbuild bundling and
+ * writing the output file for you.
+ */
 export function obfuscateCode(input: string, configInput?: ObfuscationConfigInput): ObfuscateCodeResult {
     const config = resolveConfig(configInput);
     const ast = babelParser.parse(input, {

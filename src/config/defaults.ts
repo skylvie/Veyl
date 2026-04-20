@@ -1,7 +1,9 @@
 import type { ObfuscationConfig } from "../types/config.js";
 
+/** Default config filename Veyl looks for when no `-c` path is passed. */
 export const DEFAULT_CONFIG_FILE = "veyl_config.json";
 
+/** Built-in Veyl defaults used when no config file or API config is provided. */
 export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
     log_level: "info",
     features: {

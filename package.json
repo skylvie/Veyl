@@ -1,7 +1,8 @@
 {
     "name": "veyl",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "type": "module",
+    "private": false,
     "bin": {
         "veyl": "./dist/cli.js"
     },
@@ -17,7 +18,8 @@
         "build": "tsc --project tsconfig.json",
         "start": "node dist/cli.js",
         "check": "tsc --project tsconfig.json --noEmit",
-        "test": "zsh ./test/test.sh"
+        "test": "zsh ./test/test.sh",
+        "cloc": "cloc --exclude-dir=dist,node_modules --exclude-lang=YAML ."
     },
     "packageManager": "pnpm@10.33.0",
     "dependencies": {
