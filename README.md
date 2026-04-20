@@ -38,7 +38,7 @@ The code includes the required elements:
 - The same list is used by both `parseCliArgs` and `buildHelpText`, which makes option changes easier to maintain.
 
 ## How It Works
-Veyl starts by sending the input TS or JS file through [esbuild](https://esbuild.github.io/). esbuild transpiles TypeScript, follows local imports, bundles the program into one ESM JS file, and tree-shakes code that is not used.
+Veyl starts by sending the input TS or JS file through [esbuild](https://esbuild.github.io/). esbuild transpiles TS, follows local imports, bundles the program into one ESM JS file, and tree-shakes code that is not used.
 
 After bundling, Veyl parses the JS into an AST and applies the obfuscation passes:
 
