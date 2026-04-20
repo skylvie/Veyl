@@ -44,6 +44,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 
 - Local bindings are renamed to randomized names like `_0x1a2b3c`.
 - Local object and class property names are renamed, including matching local member accesses.
+- Direct function calls and class constructor calls gain an extra randomized `const` reference before invocation.
 - String literals are moved into a randomized string table. Each stored string is encoded with base64, bit rotation, and XOR, then decoded at runtime by injected helper functions.
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.

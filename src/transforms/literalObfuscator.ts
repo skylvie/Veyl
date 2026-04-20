@@ -184,7 +184,7 @@ function pickNumberOperator(family: NumberOperatorFamily): NumberOperator {
         return crypto.randomInt(0, 2) === 0 ? "+" : "-";
     }
 
-    return crypto.randomInt(0, 2) === 0 ? "*" : "/";
+    return "*";
 }
 
 function encodeNumberOperator(operator: NumberOperator): number {

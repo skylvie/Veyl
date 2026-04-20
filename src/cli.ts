@@ -145,6 +145,7 @@ function printStats(stats: ObfuscationStats): void {
     process.stdout.write(`  output:     ${formatKilobytes(stats.outputBytes)}\n`);
     process.stdout.write(`  bindings:   ${stats.renamedBindings} renamed\n`);
     process.stdout.write(`  properties: ${stats.renamedProperties} renamed\n`);
+    process.stdout.write(`  depth refs: ${stats.addedDepthReferences} added\n`);
     process.stdout.write(
         `  literals:   ${totalLiterals} obfuscated ` +
         chalk.gray(`(${stats.obfuscatedStrings} strings, ${stats.obfuscatedNumbers} numbers, ${stats.obfuscatedBooleans} booleans)`),
