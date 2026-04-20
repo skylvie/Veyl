@@ -28,6 +28,18 @@ pnpm link --global
 veyl -i ./input.ts -o ./output.js
 ```
 
+## Testing
+```sh
+cd example
+chmod +x ./run.sh
+./run.sh
+
+# Flags
+./run.sh --keep-js # Don't remove generated JS files
+./run.sh --keep-out # Don't remove `out.js`
+./run.sh --rm-js # Remove JS files
+```
+
 ## AP CSP Create Task Evidence
 The code includes the required elements:
 - Input from a file: `obfuscateFile` receives the `-i` path and esbuild reads that entry file.
