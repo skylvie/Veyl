@@ -6,6 +6,15 @@
     "bin": {
         "veyl": "./dist/cli.js"
     },
+    "files": [
+        "dist",
+        ".gitignore",
+        "LICENSE",
+        "package.json",
+        "pnpm-lock.yaml",
+        "README.md",
+        "tsconfig.json"
+    ],
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
