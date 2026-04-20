@@ -14,16 +14,26 @@ interface LiteralObfuscationResult {
     booleanCount: number;
 }
 
+type NumberOperator = "+" | "-" | "*" | "/";
+type NumberOperatorFamily = "additive" | "multiplicative";
+
+const ADDITIVE_NUMBER_SHIFT_MIN = 100_000;
+const ADDITIVE_NUMBER_SHIFT_MAX = 999_999;
+const MULTIPLICATIVE_NUMBER_SHIFT_MIN = 100;
+const MULTIPLICATIVE_NUMBER_SHIFT_MAX = 999;
+
 // Replaces string, number, and boolean literals with runtime decoder calls
 export function obfuscateLiterals(ast: object, names: NameGenerator): LiteralObfuscationResult {
+    const stringTableName = names.freshIdentifier();
     const stringAccessorName = names.freshIdentifier();
     const stringDecoderName = names.freshIdentifier();
     const numberDecoderName = names.freshIdentifier();
     const boolDecoderName = names.freshIdentifier();
     const stringXorKey = crypto.randomInt(1, 256);
-    const numberOpPool: Array<"+" | "-" | "*"> = ["+", "-", "*"];
-    const numberOp = numberOpPool[crypto.randomInt(0, numberOpPool.length)];
-    const numberShift = numberOp === "*" ? crypto.randomInt(2, 10) : crypto.randomInt(2, 20);
+    const numberFamily: NumberOperatorFamily = crypto.randomInt(0, 2) === 0 ? "additive" : "multiplicative";
+    const numberShift = numberFamily === "additive"
+        ? crypto.randomInt(ADDITIVE_NUMBER_SHIFT_MIN, ADDITIVE_NUMBER_SHIFT_MAX + 1)
+        : crypto.randomInt(MULTIPLICATIVE_NUMBER_SHIFT_MIN, MULTIPLICATIVE_NUMBER_SHIFT_MAX + 1);
 
     let trueToken = crypto.randomInt(10000, 99999);
     let falseToken = crypto.randomInt(10000, 99999);
@@ -48,11 +58,11 @@ export function obfuscateLiterals(ast: object, names: NameGenerator): LiteralObf
         },
     });
 
-    const encodedStringTable = new Array<string>(stringLiteralPaths.length * 2);
+    const encodedStringTable = new Array<string[]>(stringLiteralPaths.length * 2);
     const availableIndices = Array.from({ length: encodedStringTable.length }, (_, idx) => idx);
 
     for (let i = 0; i < encodedStringTable.length; i++) {
-        encodedStringTable[i] = encodeStringLiteralValue(randomAsciiString(), stringXorKey);
+        encodedStringTable[i] = chunkEncodedString(encodeStringLiteralValue(randomAsciiString(), stringXorKey));
     }
 
     for (const literalPath of stringLiteralPaths) {
@@ -60,7 +70,7 @@ export function obfuscateLiterals(ast: object, names: NameGenerator): LiteralObf
         const tableIndex = availableIndices[pickAt];
 
         availableIndices.splice(pickAt, 1);
-        encodedStringTable[tableIndex] = encodeStringLiteralValue(literalPath.node!.value as string, stringXorKey);
+        encodedStringTable[tableIndex] = chunkEncodedString(encodeStringLiteralValue(literalPath.node!.value as string, stringXorKey));
 
         literalPath.replaceWith(
             t.callExpression(t.identifier(stringDecoderName), [
@@ -94,15 +104,20 @@ export function obfuscateLiterals(ast: object, names: NameGenerator): LiteralObf
             continue;
         }
 
+        const numberOp = pickNumberOperator(numberFamily);
+        const opToken = encodeNumberOperator(numberOp);
         const encoded = numberOp === "+"
             ? original + numberShift
             : numberOp === "-"
                 ? original - numberShift
-                : original * numberShift;
+                : numberOp === "*"
+                    ? original * numberShift
+                    : original / numberShift;
 
         numberPath.replaceWith(
             t.callExpression(t.identifier(numberDecoderName), [
                 t.numericLiteral(encoded),
+                t.numericLiteral(opToken),
             ]) as unknown as BabelNode,
         );
 
@@ -130,12 +145,13 @@ export function obfuscateLiterals(ast: object, names: NameGenerator): LiteralObf
     });
 
     const helperNodes = buildRuntimeHelpers(
+        stringTableName,
         stringAccessorName,
         stringDecoderName,
         encodedStringTable,
         stringXorKey,
         numberDecoderName,
-        numberOp,
+        numberFamily,
         numberShift,
         boolDecoderName,
         trueToken,
@@ -147,4 +163,39 @@ export function obfuscateLiterals(ast: object, names: NameGenerator): LiteralObf
         numberCount,
         booleanCount,
     };
+}
+
+function chunkEncodedString(input: string): string[] {
+    if (input.length === 0) {
+        return [""];
+    }
+
+    const chunks: string[] = [];
+
+    for (let i = 0; i < input.length; i += 3) {
+        chunks.push(input.slice(i, i + 3));
+    }
+
+    return chunks;
+}
+
+function pickNumberOperator(family: NumberOperatorFamily): NumberOperator {
+    if (family === "additive") {
+        return crypto.randomInt(0, 2) === 0 ? "+" : "-";
+    }
+
+    return crypto.randomInt(0, 2) === 0 ? "*" : "/";
+}
+
+function encodeNumberOperator(operator: NumberOperator): number {
+    switch (operator) {
+        case "+":
+            return 0;
+        case "-":
+            return 1;
+        case "*":
+            return 2;
+        case "/":
+            return 3;
+    }
 }

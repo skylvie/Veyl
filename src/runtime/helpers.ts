@@ -1,35 +1,47 @@
 import * as t from "@babel/types";
 import type { BabelNode } from "../babel/interop.js";
 
+type NumberOperatorFamily = "additive" | "multiplicative";
+
 // Inject string, number, and boolean decoder functions into the AST
 export function buildRuntimeHelpers(
+    stringTableName: string,
     stringAccessorName: string,
     stringDecoderName: string,
-    encodedTable: string[],
+    encodedTable: string[][],
     stringXorKey: number,
     numberDecoderName: string,
-    numberOp: "+" | "-" | "*",
+    numberFamily: NumberOperatorFamily,
     numberShift: number,
     boolDecoderName: string,
     trueToken: number,
 ): t.Statement[] {
-    const tableElements = encodedTable.map((value) => t.stringLiteral(value));
+    const tableElements = encodedTable.map((chunks) => t.arrayExpression(
+        chunks.map((value) => t.stringLiteral(value)),
+    ));
+
+    const stringTableDeclaration = t.variableDeclaration("const", [
+        t.variableDeclarator(
+            t.identifier(stringTableName),
+            t.arrayExpression(tableElements),
+        ),
+    ]);
 
     const stringAccessorFn = t.functionDeclaration(
         t.identifier(stringAccessorName),
         [t.identifier("index")],
         t.blockStatement([
-            t.variableDeclaration("const", [
-                t.variableDeclarator(
-                    t.identifier("table"),
-                    t.arrayExpression(tableElements),
-                ),
-            ]),
             t.returnStatement(
-                t.memberExpression(
-                    t.identifier("table"),
-                    t.identifier("index"),
-                    true,
+                t.callExpression(
+                    t.memberExpression(
+                        t.memberExpression(
+                            t.identifier(stringTableName),
+                            t.identifier("index"),
+                            true,
+                        ),
+                        t.identifier("join"),
+                    ),
+                    [t.stringLiteral("")],
                 ),
             ),
         ]),
@@ -227,20 +239,46 @@ export function buildRuntimeHelpers(
         ]),
     );
 
-    const numberOperator = numberOp === "+"
-        ? "-"
-        : numberOp === "-"
-            ? "+"
-            : "/";
+    const numberDecoderStatements = numberFamily === "additive"
+        ? [
+            t.ifStatement(
+                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(0)),
+                t.blockStatement([
+                    t.returnStatement(
+                        t.binaryExpression("-", t.identifier("value"), t.numericLiteral(numberShift)),
+                    ),
+                ]),
+            ),
+            t.ifStatement(
+                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(1)),
+                t.blockStatement([
+                    t.returnStatement(
+                        t.binaryExpression("+", t.identifier("value"), t.numericLiteral(numberShift)),
+                    ),
+                ]),
+            ),
+            t.returnStatement(
+                t.binaryExpression("+", t.identifier("value"), t.numericLiteral(numberShift)),
+            ),
+        ]
+        : [
+            t.ifStatement(
+                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(2)),
+                t.blockStatement([
+                    t.returnStatement(
+                        t.binaryExpression("/", t.identifier("value"), t.numericLiteral(numberShift)),
+                    ),
+                ]),
+            ),
+            t.returnStatement(
+                t.binaryExpression("*", t.identifier("value"), t.numericLiteral(numberShift)),
+            ),
+        ];
 
     const numberDecoderFn = t.functionDeclaration(
         t.identifier(numberDecoderName),
-        [t.identifier("value")],
-        t.blockStatement([
-            t.returnStatement(
-                t.binaryExpression(numberOperator, t.identifier("value"), t.numericLiteral(numberShift)),
-            ),
-        ]),
+        [t.identifier("value"), t.identifier("op")],
+        t.blockStatement(numberDecoderStatements),
     );
 
     const boolDecoderFn = t.functionDeclaration(
@@ -254,6 +292,7 @@ export function buildRuntimeHelpers(
     );
 
     return [
+        stringTableDeclaration,
         stringAccessorFn,
         stringDecoderFn,
         numberDecoderFn,
