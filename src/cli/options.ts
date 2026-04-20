@@ -30,7 +30,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: `Config JSON file. Defaults to ./${DEFAULT_CONFIG_FILE} when present.`,
     },
     {
-        flags: ["--obfuscated-strings"],
+        flags: ["--obfuscated-strings", "--obfuscated_strings"],
+        helpFlags: ["--obfuscated-strings"],
         target: "obfuscatedStrings",
         takesValue: true,
         valueName: "true|false",
@@ -38,7 +39,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Enable or disable string literal obfuscation.",
     },
     {
-        flags: ["--obfuscated-numbers"],
+        flags: ["--obfuscated-numbers", "--obfuscated_numbers"],
+        helpFlags: ["--obfuscated-numbers"],
         target: "obfuscatedNumbers",
         takesValue: true,
         valueName: "true|false",
@@ -46,7 +48,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Enable or disable number literal obfuscation.",
     },
     {
-        flags: ["--obfuscated-booleans"],
+        flags: ["--obfuscated-booleans", "--obfuscated_booleans"],
+        helpFlags: ["--obfuscated-booleans"],
         target: "obfuscatedBooleans",
         takesValue: true,
         valueName: "true|false",
@@ -54,7 +57,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Enable or disable boolean literal obfuscation.",
     },
     {
-        flags: ["--randomized-unique-identifiers"],
+        flags: ["--randomized-unique-identifiers", "--randomized_unique_identifiers"],
+        helpFlags: ["--randomized-unique-identifiers"],
         target: "randomizedUniqueIdentifiers",
         takesValue: true,
         valueName: "true|false",
@@ -62,7 +66,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Use Veyl randomized names instead of esbuild minified identifiers.",
     },
     {
-        flags: ["--number-obfuscation-offset"],
+        flags: ["--number-obfuscation-offset", "--number_obfuscation_offset"],
+        helpFlags: ["--number-obfuscation-offset"],
         target: "numberObfuscationOffset",
         takesValue: true,
         valueName: "num|randomized",
@@ -70,7 +75,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Number offset for numeric literal obfuscation.",
     },
     {
-        flags: ["--number-obfuscation-operator"],
+        flags: ["--number-obfuscation-operator", "--number_obfuscation_operator"],
+        helpFlags: ["--number-obfuscation-operator"],
         target: "numberObfuscationOperator",
         takesValue: true,
         valueName: "+|-|*|/|randomized",
@@ -78,7 +84,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Number operator for numeric literal obfuscation.",
     },
     {
-        flags: ["--boolean-obfuscation-number"],
+        flags: ["--boolean-obfuscation-number", "--boolean_obfuscation_number"],
+        helpFlags: ["--boolean-obfuscation-number"],
         target: "booleanObfuscationNumber",
         takesValue: true,
         valueName: "num|randomized",
@@ -86,7 +93,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Numeric token used for obfuscated true values.",
     },
     {
-        flags: ["--unnecessary-depth"],
+        flags: ["--unnecessary-depth", "--unnecessary_depth"],
+        helpFlags: ["--unnecessary-depth"],
         target: "unnecessaryDepth",
         takesValue: true,
         valueName: "true|false",
@@ -94,7 +102,8 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Enable or disable unnecessary depth references.",
     },
     {
-        flags: ["--log-level"],
+        flags: ["--log-level", "--log_level"],
+        helpFlags: ["--log-level"],
         target: "logLevel",
         takesValue: true,
         valueName: "none|error|info|debug",
@@ -198,7 +207,7 @@ export function buildHelpText(commandName: string): string {
     ];
 
     for (const option of OPTION_DEFINITIONS) {
-        const flagText = chalk.green(option.flags.join(", "));
+        const flagText = chalk.green((option.helpFlags ?? option.flags).join(", "));
         const valueText =
             option.valueName === undefined ? "" : chalk.gray(` <${option.valueName}>`);
 
@@ -212,7 +221,7 @@ export function readLogLevelFlag(argv: string[]): LogLevel | null {
     for (let i = 0; i < argv.length; i++) {
         const parsedToken = splitOptionToken(argv[i]);
 
-        if (parsedToken.flag !== "--log-level") {
+        if (parsedToken.flag !== "--log-level" && parsedToken.flag !== "--log_level") {
             continue;
         }
 

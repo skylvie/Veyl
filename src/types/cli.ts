@@ -11,6 +11,7 @@ export interface CliOptions {
 
 export interface CliOptionDefinition {
     flags: string[];
+    helpFlags?: string[];
     target: string;
     takesValue: boolean;
     valueName?: string;
