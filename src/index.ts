@@ -1,14 +1,15 @@
 export type {
+    LogLevel,
     NumberObfuscationOperator,
     ObfuscationConfig,
     ObfuscationConfigInput,
-} from "./utils/config.js";
+} from "./types/config.js";
 
 export type {
     ObfuscateCodeResult,
     ObfuscateFileOptions,
     ObfuscationStats,
-} from "./core/obfuscate.js";
+} from "./types/core.js";
 
 export {
     DEFAULT_CONFIG_FILE,
@@ -17,7 +18,7 @@ export {
     loadDefaultConfigFile,
     mergeConfig,
     resolveConfig,
-} from "./utils/config.js";
+} from "./config/index.js";
 
 export {
     obfuscateCode,

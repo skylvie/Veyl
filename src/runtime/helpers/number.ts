@@ -1,4 +1,4 @@
-import type { NumberObfuscationOperator } from "../../utils/config.js";
+import type { NumberObfuscationOperator } from "../../types/config.js";
 import * as t from "@babel/types";
 
 export function buildNumberRuntimeHelper(

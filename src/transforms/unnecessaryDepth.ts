@@ -1,29 +1,8 @@
-import type { BabelNode } from "../babel/interop.js";
-import { traverse } from "../babel/interop.js";
+import type { BabelNode } from "../types/babel.js";
 import type { NameGenerator } from "../utils/random.js";
+import type { CallablePath, IdentifierNode, StatementPath, UnnecessaryDepthResult } from "../types/transforms.js";
+import { traverse } from "../babel/interop.js";
 import * as t from "@babel/types";
-
-interface UnnecessaryDepthResult {
-    addedReferences: number;
-}
-
-interface CallablePath {
-    node: {
-        callee: BabelNode;
-        optional?: boolean;
-    };
-    getStatementParent(): StatementPath | null;
-}
-
-interface StatementPath {
-    parent?: BabelNode;
-    insertBefore(node: t.Statement): void;
-}
-
-interface IdentifierNode extends BabelNode {
-    type: "Identifier";
-    name: string;
-}
 
 // Adds an extra local reference before direct function and class constructor calls
 export function addUnnecessaryDepth(ast: object, names: NameGenerator): UnnecessaryDepthResult {
@@ -67,7 +46,7 @@ function addReferenceBeforeCall(pathNode: CallablePath, names: NameGenerator): b
         t.variableDeclaration("const", [
             t.variableDeclarator(
                 t.identifier(aliasName),
-                t.cloneNode(callee) as t.Expression,
+                t.cloneNode(callee as unknown as t.Expression),
             ),
         ]),
     );

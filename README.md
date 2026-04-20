@@ -31,6 +31,7 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 ### Config File
 ```jsonc
 {
+	"log_level": "info",
 	"features": {
 		"obfuscate": {
 			"strings": true, // Do string obfuscation
@@ -48,6 +49,12 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 }
 ```
 
+Log levels:
+- `none`: print nothing
+- `error`: print errors only
+- `info`: print progress updates only
+- `debug`: print paths, resolved config, and summary details
+
 ### CLI Flags
 You can also use CLI flags instead:
 ```
@@ -59,6 +66,7 @@ You can also use CLI flags instead:
 --number-obfuscation-operator=<+|-|*|/|randomized>
 --boolean-obfuscation-number=<num|randomized>
 --unnecessary-depth=true|false
+--log-level=none|error|info|debug
 ```
 
 ## Testing

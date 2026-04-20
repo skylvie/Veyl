@@ -1,9 +1,5 @@
 import esbuild from "esbuild";
-
-interface BundleResult {
-    code: string;
-    bytes: number;
-}
+import type { BundleResult } from "../types/core.js";
 
 // TS/JS -> JS (+ bundling & tree shaking)
 export async function bundleInput(input: string): Promise<BundleResult> {

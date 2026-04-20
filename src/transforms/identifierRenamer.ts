@@ -1,6 +1,6 @@
-import type { BabelNodePath, BabelScope } from "../babel/interop.js";
-import { traverse } from "../babel/interop.js";
+import type { BabelNodePath, BabelScope } from "../types/babel.js";
 import type { NameGenerator } from "../utils/random.js";
+import { traverse } from "../babel/interop.js";
 
 // Renames locally scoped bindings throughout the AST
 export function renameBindings(ast: object, names: NameGenerator): number {

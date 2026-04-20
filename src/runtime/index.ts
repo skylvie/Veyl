@@ -1,29 +1,10 @@
-import type { NumberObfuscationOperator } from "../utils/config.js";
+import type { RuntimeHelperOptions } from "../types/runtime.js";
 import { buildBooleanRuntimeHelper } from "./helpers/boolean.js";
 import { buildNumberRuntimeHelper } from "./helpers/number.js";
 import { buildStringRuntimeHelpers } from "./helpers/string.js";
 import * as t from "@babel/types";
 
 export { insertHelperStatements } from "./helpers/insert.js";
-
-interface RuntimeHelperOptions {
-    strings?: {
-        tableName: string;
-        accessorName: string;
-        decoderName: string;
-        encodedTable: string[][];
-        xorKey: number;
-    };
-    numbers?: {
-        decoderName: string;
-        allowedOperators: readonly NumberObfuscationOperator[];
-        offset: number;
-    };
-    booleans?: {
-        decoderName: string;
-        trueToken: number;
-    };
-}
 
 // Builds the runtime decoder helpers injected into the obfuscated AST
 export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[] {

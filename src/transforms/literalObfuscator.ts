@@ -1,22 +1,14 @@
-import type { NumberObfuscationOperator, ObfuscationConfig } from "../utils/config.js";
-import type { BabelNode, BabelNodePath } from "../babel/interop.js";
+import type { NumberObfuscationOperator, ObfuscationConfig } from "../types/config.js";
+import type { LiteralObfuscationResult } from "../types/transforms.js";
+import type { BabelNode, BabelNodePath } from "../types/babel.js";
 import type { NameGenerator } from "../utils/random.js";
 import { traverse } from "../babel/interop.js";
-import { buildRuntimeHelpers } from "../runtime/index.js";
 import { isDirectiveLiteral, isModuleStringLiteral, isPropertyKeyNode } from "../babel/predicates.js";
+import { buildRuntimeHelpers } from "../runtime/index.js";
 import { encodeStringLiteralValue, randomAsciiString } from "../utils/random.js";
 import * as t from "@babel/types";
 import crypto from "node:crypto";
 
-interface LiteralObfuscationResult {
-    helperNodes: t.Statement[];
-    stringCount: number;
-    numberCount: number;
-    booleanCount: number;
-    booleanNumber: number | null;
-    numberOffset: number | null;
-    numberOperators: NumberObfuscationOperator[];
-}
 
 const ADDITIVE_NUMBER_SHIFT_MIN = 100_000;
 const ADDITIVE_NUMBER_SHIFT_MAX = 999_999;

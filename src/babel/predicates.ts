@@ -1,4 +1,4 @@
-import type { BabelNode, BabelNodePath, PropKeyNode } from "./interop.js";
+import type { BabelNode, BabelNodePath, PropKeyNode } from "../types/babel.js";
 
 export function isPropertyKeyNode(pathNode: BabelNodePath): boolean {
     if (!pathNode.parent || pathNode.key !== "key") {

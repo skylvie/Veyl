@@ -1,7 +1,6 @@
-import type { NumberObfuscationOperator, ObfuscationConfigInput } from "../utils/config.js";
 import { compactOutput, bundleInput } from "./bundler.js";
 import { generate } from "../babel/interop.js";
-import { resolveConfig } from "../utils/config.js";
+import { resolveConfig } from "../config/index.js";
 import { insertHelperStatements } from "../runtime/index.js";
 import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
@@ -11,42 +10,8 @@ import { NameGenerator } from "../utils/random.js";
 import * as babelParser from "@babel/parser";
 import fs from "node:fs";
 import path from "node:path";
-
-export interface ObfuscateFileOptions {
-    input: string;
-    output: string;
-    config?: ObfuscationConfigInput;
-}
-
-export interface ObfuscationStats {
-    input: string;
-    output: string;
-    bundledBytes: number;
-    outputBytes: number;
-    renamedBindings: number;
-    renamedProperties: number;
-    addedDepthReferences: number;
-    obfuscatedStrings: number;
-    obfuscatedNumbers: number;
-    obfuscatedBooleans: number;
-    booleanObfuscationNumber: number | null;
-    numberObfuscationOffset: number | null;
-    numberObfuscationOperators: NumberObfuscationOperator[];
-    elapsedMs: number;
-}
-
-export interface ObfuscateCodeResult {
-    code: string;
-    renamedBindings: number;
-    renamedProperties: number;
-    addedDepthReferences: number;
-    obfuscatedStrings: number;
-    obfuscatedNumbers: number;
-    obfuscatedBooleans: number;
-    booleanObfuscationNumber: number | null;
-    numberObfuscationOffset: number | null;
-    numberObfuscationOperators: NumberObfuscationOperator[];
-}
+import type { ObfuscationConfigInput } from "../types/config.js";
+import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
 
 export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<ObfuscationStats> {
     const startedAt = performance.now();

@@ -1,4 +1,4 @@
-import type { BabelNode } from "../../babel/interop.js";
+import type { BabelNode } from "../../types/babel.js";
 import * as t from "@babel/types";
 
 export function insertHelperStatements(ast: object, helpers: t.Statement[]): void {

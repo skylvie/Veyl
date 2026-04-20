@@ -1,49 +1,16 @@
-import type { BabelNode, PropKeyNode } from "../babel/interop.js";
+import type { BabelNode } from "../types/babel.js";
+import type { NameGenerator } from "../utils/random.js";
+import type {
+    ClassDeclarationPath,
+    MemberExpressionNode,
+    MemberExpressionPath,
+    NewExpressionNode,
+    PropertyPath,
+    PropertyRenameResult,
+    VariableDeclaratorPath,
+} from "../types/transforms.js";
 import { traverse } from "../babel/interop.js";
 import { staticKeyName } from "../babel/predicates.js";
-import type { NameGenerator } from "../utils/random.js";
-
-interface PropertyPath {
-    node: PropKeyNode;
-    parentPath?: {
-        parent?: BabelNode;
-    };
-}
-
-interface VariableDeclaratorPath {
-    node: {
-        id: BabelNode;
-        init: BabelNode | null;
-    };
-}
-
-interface ClassDeclarationPath {
-    node: {
-        id: BabelNode | null;
-    };
-}
-
-interface MemberExpressionPath {
-    node: {
-        computed: boolean;
-        object: BabelNode;
-        property: BabelNode;
-    };
-}
-
-interface MemberExpressionNode extends BabelNode {
-    computed: boolean;
-    object: BabelNode;
-    property: BabelNode;
-}
-
-interface NewExpressionNode extends BabelNode {
-    callee: BabelNode;
-}
-
-interface PropertyRenameResult {
-    renamedProperties: number;
-}
 
 // Renames properties declared on local object/class shapes and matching local accesses.
 export function renameProperties(ast: object, names: NameGenerator): PropertyRenameResult {
