@@ -6,6 +6,7 @@ export interface CliOptions {
     configFile: string | null;
     configOverrides: ObfuscationConfigInput;
     help: boolean;
+    version: boolean;
 }
 
 export interface CliOptionDefinition {

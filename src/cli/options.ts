@@ -108,6 +108,13 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         required: false,
         description: "Show this help text.",
     },
+    {
+        flags: ["-v", "--version"],
+        target: "version",
+        takesValue: false,
+        required: false,
+        description: "Show project info, credits, and version.",
+    },
 ];
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -117,6 +124,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
         configFile: null,
         configOverrides: {},
         help: false,
+        version: false,
     };
 
     for (let i = 0; i < argv.length; i++) {
@@ -136,6 +144,10 @@ export function parseCliArgs(argv: string[]): CliOptions {
                 options.help = true;
             }
 
+            if (definition.target === "version") {
+                options.version = true;
+            }
+
             continue;
         }
 
@@ -152,8 +164,12 @@ export function parseCliArgs(argv: string[]): CliOptions {
         }
     }
 
-    if (options.help) {
+    if (options.help || options.version) {
         return options;
+    }
+
+    if (options.input === "" && options.output === "") {
+        throw new Error("Missing input and output. Run `veyl -h` for help.");
     }
 
     for (const definition of OPTION_DEFINITIONS) {

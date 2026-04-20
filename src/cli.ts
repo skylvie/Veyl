@@ -3,6 +3,7 @@ import type { LogLevel } from "./types/config.js";
 import { loadCliConfig } from "./cli/config.js";
 import { mergeConfig, obfuscateFile, resolveConfig } from "./index.js";
 import { buildHelpText, parseCliArgs, readLogLevelFlag, resolveCliPaths } from "./cli/options.js";
+import { buildVersionText } from "./cli/projectInfo.js";
 import { printRunHeader, printStats } from "./cli/output.js";
 import { createLogger } from "./utils/logger.js";
 import chalk from "chalk";
@@ -16,6 +17,11 @@ async function main(): Promise<void> {
 
     if (options.help) {
         process.stdout.write(`${buildHelpText(commandName)}\n`);
+        return;
+    }
+
+    if (options.version) {
+        process.stdout.write(`${buildVersionText()}\n`);
         return;
     }
 
