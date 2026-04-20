@@ -1,3 +1,4 @@
+import type { NumberObfuscationOperator, ObfuscationConfigInput } from "../utils/config.js";
 import { compactOutput, bundleInput } from "./bundler.js";
 import { generate } from "../babel/interop.js";
 import { resolveConfig } from "../utils/config.js";
@@ -10,7 +11,6 @@ import { NameGenerator } from "../utils/random.js";
 import * as babelParser from "@babel/parser";
 import fs from "node:fs";
 import path from "node:path";
-import type { ObfuscationConfigInput } from "../utils/config.js";
 
 export interface ObfuscateFileOptions {
     input: string;
@@ -29,6 +29,9 @@ export interface ObfuscationStats {
     obfuscatedStrings: number;
     obfuscatedNumbers: number;
     obfuscatedBooleans: number;
+    booleanObfuscationNumber: number | null;
+    numberObfuscationOffset: number | null;
+    numberObfuscationOperators: NumberObfuscationOperator[];
     elapsedMs: number;
 }
 
@@ -40,6 +43,9 @@ export interface ObfuscateCodeResult {
     obfuscatedStrings: number;
     obfuscatedNumbers: number;
     obfuscatedBooleans: number;
+    booleanObfuscationNumber: number | null;
+    numberObfuscationOffset: number | null;
+    numberObfuscationOperators: NumberObfuscationOperator[];
 }
 
 export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<ObfuscationStats> {
@@ -66,6 +72,9 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
         obfuscatedStrings: transformed.obfuscatedStrings,
         obfuscatedNumbers: transformed.obfuscatedNumbers,
         obfuscatedBooleans: transformed.obfuscatedBooleans,
+        booleanObfuscationNumber: transformed.booleanObfuscationNumber,
+        numberObfuscationOffset: transformed.numberObfuscationOffset,
+        numberObfuscationOperators: transformed.numberObfuscationOperators,
         elapsedMs: performance.now() - startedAt,
     };
 }
@@ -105,5 +114,8 @@ export function obfuscateCode(input: string, configInput?: ObfuscationConfigInpu
         obfuscatedStrings: literalResult.stringCount,
         obfuscatedNumbers: literalResult.numberCount,
         obfuscatedBooleans: literalResult.booleanCount,
+        booleanObfuscationNumber: literalResult.booleanNumber,
+        numberObfuscationOffset: literalResult.numberOffset,
+        numberObfuscationOperators: literalResult.numberOperators,
     };
 }

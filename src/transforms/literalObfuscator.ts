@@ -13,13 +13,17 @@ interface LiteralObfuscationResult {
     stringCount: number;
     numberCount: number;
     booleanCount: number;
+    booleanNumber: number | null;
+    numberOffset: number | null;
+    numberOperators: NumberObfuscationOperator[];
 }
 
 const ADDITIVE_NUMBER_SHIFT_MIN = 100_000;
 const ADDITIVE_NUMBER_SHIFT_MAX = 999_999;
 const MULTIPLICATIVE_NUMBER_SHIFT_MIN = 100;
 const MULTIPLICATIVE_NUMBER_SHIFT_MAX = 999;
-const NUMBER_OPERATORS: readonly NumberObfuscationOperator[] = ["+", "-", "*", "/"];
+const ADDITIVE_NUMBER_OPERATORS: readonly NumberObfuscationOperator[] = ["+", "-"];
+const MULTIPLICATIVE_NUMBER_OPERATORS: readonly NumberObfuscationOperator[] = ["*", "/"];
 
 // Replaces string, number, and boolean literals with runtime decoder calls
 export function obfuscateLiterals(
@@ -31,6 +35,9 @@ export function obfuscateLiterals(
     let stringCount = 0;
     let numberCount = 0;
     let booleanCount = 0;
+    let booleanNumber: number | null = null;
+    let numberOffset: number | null = null;
+    const numberOperators = new Set<NumberObfuscationOperator>();
 
     if (config.features.obfuscate.strings) {
         const stringTableName = names.freshIdentifier();
@@ -87,9 +94,9 @@ export function obfuscateLiterals(
     if (config.features.obfuscate.numbers) {
         const numberDecoderName = names.freshIdentifier();
         const allowedOperators = config.options.number_operator === null
-            ? NUMBER_OPERATORS
+            ? pickNumberOperatorFamily()
             : [config.options.number_operator];
-        const numberOffset = config.options.number_offset ?? randomNumberOffset(allowedOperators);
+        numberOffset = config.options.number_offset ?? randomNumberOffset(allowedOperators);
         const numericLiteralPaths: BabelNodePath[] = [];
 
         traverse(ast, {
@@ -132,12 +139,20 @@ export function obfuscateLiterals(
             allowedOperators,
             offset: numberOffset,
         };
+
+        if (numberCount > 0) {
+            for (const operator of allowedOperators) {
+                numberOperators.add(operator);
+            }
+        }
     }
 
     if (config.features.obfuscate.booleans) {
         const boolDecoderName = names.freshIdentifier();
         const trueToken = config.options.boolean_number ?? crypto.randomInt(10000, 99999);
         let falseToken = crypto.randomInt(10000, 99999);
+
+        booleanNumber = trueToken;
 
         while (falseToken === trueToken) {
             falseToken = crypto.randomInt(10000, 99999);
@@ -174,6 +189,9 @@ export function obfuscateLiterals(
         stringCount,
         numberCount,
         booleanCount,
+        booleanNumber,
+        numberOffset,
+        numberOperators: [...numberOperators],
     };
 }
 
@@ -193,6 +211,12 @@ function chunkEncodedString(input: string): string[] {
 
 function pickNumberOperator(operators: readonly NumberObfuscationOperator[]): NumberObfuscationOperator {
     return operators[crypto.randomInt(0, operators.length)];
+}
+
+function pickNumberOperatorFamily(): readonly NumberObfuscationOperator[] {
+    return crypto.randomInt(0, 2) === 0
+        ? ADDITIVE_NUMBER_OPERATORS
+        : MULTIPLICATIVE_NUMBER_OPERATORS;
 }
 
 function encodeNumber(original: number, operator: NumberObfuscationOperator, offset: number): number {
