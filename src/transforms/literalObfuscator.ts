@@ -1,7 +1,7 @@
 import type { BabelNode, BabelNodePath } from "../babel/interop.js";
 import type { NameGenerator } from "../utils/random.js";
 import { traverse } from "../babel/interop.js";
-import { buildRuntimeHelpers } from "../runtime/helpers.js";
+import { buildRuntimeHelpers } from "../runtime/index.js";
 import { isDirectiveLiteral, isModuleStringLiteral, isPropertyKeyNode } from "../babel/predicates.js";
 import { encodeStringLiteralValue, randomAsciiString } from "../utils/random.js";
 import * as t from "@babel/types";

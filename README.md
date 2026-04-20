@@ -17,9 +17,6 @@ pnpm build
 3. Run it!
 ```sh
 node dist/cli.js -i ./input.ts -o ./output.js
-# or:
-pnpm link --global
-pnpm start -i ./input.ts -o ./output.js
 ```
 
 4. Optional: link the CLI command
@@ -30,7 +27,7 @@ veyl -i ./input.ts -o ./output.js
 
 ## Testing
 ```sh
-cd example
+cd test
 chmod +x ./run.sh
 ./run.sh
 

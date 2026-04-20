@@ -1,20 +1,11 @@
 import * as t from "@babel/types";
-import type { BabelNode } from "../babel/interop.js";
 
-type NumberOperatorFamily = "additive" | "multiplicative";
-
-// Inject string, number, and boolean decoder functions into the AST
-export function buildRuntimeHelpers(
+export function buildStringRuntimeHelpers(
     stringTableName: string,
     stringAccessorName: string,
     stringDecoderName: string,
     encodedTable: string[][],
     stringXorKey: number,
-    numberDecoderName: string,
-    numberFamily: NumberOperatorFamily,
-    numberShift: number,
-    boolDecoderName: string,
-    trueToken: number,
 ): t.Statement[] {
     const tableElements = encodedTable.map((chunks) => t.arrayExpression(
         chunks.map((value) => t.stringLiteral(value)),
@@ -239,82 +230,9 @@ export function buildRuntimeHelpers(
         ]),
     );
 
-    const numberDecoderStatements = numberFamily === "additive"
-        ? [
-            t.ifStatement(
-                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(0)),
-                t.blockStatement([
-                    t.returnStatement(
-                        t.binaryExpression("-", t.identifier("value"), t.numericLiteral(numberShift)),
-                    ),
-                ]),
-            ),
-            t.ifStatement(
-                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(1)),
-                t.blockStatement([
-                    t.returnStatement(
-                        t.binaryExpression("+", t.identifier("value"), t.numericLiteral(numberShift)),
-                    ),
-                ]),
-            ),
-            t.returnStatement(
-                t.binaryExpression("+", t.identifier("value"), t.numericLiteral(numberShift)),
-            ),
-        ]
-        : [
-            t.ifStatement(
-                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(2)),
-                t.blockStatement([
-                    t.returnStatement(
-                        t.binaryExpression("/", t.identifier("value"), t.numericLiteral(numberShift)),
-                    ),
-                ]),
-            ),
-            t.returnStatement(
-                t.binaryExpression("*", t.identifier("value"), t.numericLiteral(numberShift)),
-            ),
-        ];
-
-    const numberDecoderFn = t.functionDeclaration(
-        t.identifier(numberDecoderName),
-        [t.identifier("value"), t.identifier("op")],
-        t.blockStatement(numberDecoderStatements),
-    );
-
-    const boolDecoderFn = t.functionDeclaration(
-        t.identifier(boolDecoderName),
-        [t.identifier("value")],
-        t.blockStatement([
-            t.returnStatement(
-                t.binaryExpression("===", t.identifier("value"), t.numericLiteral(trueToken)),
-            ),
-        ]),
-    );
-
     return [
         stringTableDeclaration,
         stringAccessorFn,
         stringDecoderFn,
-        numberDecoderFn,
-        boolDecoderFn,
     ];
-}
-
-export function insertHelperStatements(ast: object, helpers: t.Statement[]): void {
-    const program = (ast as { program?: { body?: BabelNode[] } }).program;
-
-    if (program?.body === undefined) {
-        return;
-    }
-
-    let insertAt = 0;
-
-    while (
-        insertAt < program.body.length &&
-        program.body[insertAt].type === "ImportDeclaration"
-    ) {
-        insertAt++;
-    }
-
-    program.body.splice(insertAt, 0, ...(helpers as unknown as BabelNode[]));
 }

@@ -1,5 +1,11 @@
 #!/usr/bin/env zsh
 
+script_dir=${0:A:h}
+
+if [[ "$PWD" != "$script_dir" ]]; then
+    cd "$script_dir"
+fi
+
 keep_js=false
 keep_out=false
 
@@ -17,7 +23,7 @@ for arg in "$@"; do
             ;;
         *)
             echo "Unknown option: $arg" >&2
-            echo "Usage: ./run.sh [--keep-js|--keep-out|--rm-js]" >&2
+            echo "Usage: ./test.sh [--keep-js|--keep-out|--rm-js]" >&2
             exit 1
             ;;
     esac
@@ -25,7 +31,7 @@ done
 
 cd ..
 pnpm build
-cd example
+cd test
 
 tsc index.ts --ignoreconfig
 node index.js

@@ -16,7 +16,8 @@
     "scripts": {
         "build": "tsc --project tsconfig.json",
         "start": "node dist/cli.js",
-        "check": "tsc --project tsconfig.json --noEmit"
+        "check": "tsc --project tsconfig.json --noEmit",
+        "test": "zsh ./test/test.sh"
     },
     "packageManager": "pnpm@10.33.0",
     "dependencies": {

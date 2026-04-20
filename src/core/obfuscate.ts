@@ -1,6 +1,6 @@
 import { compactOutput, bundleInput } from "./bundler.js";
 import { generate } from "../babel/interop.js";
-import { insertHelperStatements } from "../runtime/helpers.js";
+import { insertHelperStatements } from "../runtime/index.js";
 import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";

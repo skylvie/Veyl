@@ -1,5 +1,5 @@
 node_modules/
 dist/
-example/out.js
-example/index.js
-example/module.js
+test/out.js
+test/index.js
+test/module.js
