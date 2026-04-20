@@ -1,3 +1,5 @@
 node_modules/
 dist/
 example/out.js
+example/index.js
+example/module.js
