@@ -1,40 +1,64 @@
+import type { NumberObfuscationOperator } from "../utils/config.js";
 import { buildBooleanRuntimeHelper } from "./helpers/boolean.js";
 import { buildNumberRuntimeHelper } from "./helpers/number.js";
 import { buildStringRuntimeHelpers } from "./helpers/string.js";
 import * as t from "@babel/types";
 
-export type NumberOperatorFamily = "additive" | "multiplicative";
 export { insertHelperStatements } from "./helpers/insert.js";
 
+interface RuntimeHelperOptions {
+    strings?: {
+        tableName: string;
+        accessorName: string;
+        decoderName: string;
+        encodedTable: string[][];
+        xorKey: number;
+    };
+    numbers?: {
+        decoderName: string;
+        allowedOperators: readonly NumberObfuscationOperator[];
+        offset: number;
+    };
+    booleans?: {
+        decoderName: string;
+        trueToken: number;
+    };
+}
+
 // Builds the runtime decoder helpers injected into the obfuscated AST
-export function buildRuntimeHelpers(
-    stringTableName: string,
-    stringAccessorName: string,
-    stringDecoderName: string,
-    encodedTable: string[][],
-    stringXorKey: number,
-    numberDecoderName: string,
-    numberFamily: NumberOperatorFamily,
-    numberShift: number,
-    boolDecoderName: string,
-    trueToken: number,
-): t.Statement[] {
-    return [
-        ...buildStringRuntimeHelpers(
-            stringTableName,
-            stringAccessorName,
-            stringDecoderName,
-            encodedTable,
-            stringXorKey,
-        ),
-        buildNumberRuntimeHelper(
-            numberDecoderName,
-            numberFamily,
-            numberShift,
-        ),
-        buildBooleanRuntimeHelper(
-            boolDecoderName,
-            trueToken,
-        ),
-    ];
+export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[] {
+    const statements: t.Statement[] = [];
+
+    if (options.strings !== undefined) {
+        statements.push(
+            ...buildStringRuntimeHelpers(
+                options.strings.tableName,
+                options.strings.accessorName,
+                options.strings.decoderName,
+                options.strings.encodedTable,
+                options.strings.xorKey,
+            ),
+        );
+    }
+
+    if (options.numbers !== undefined) {
+        statements.push(
+            buildNumberRuntimeHelper(
+                options.numbers.decoderName,
+                options.numbers.allowedOperators,
+                options.numbers.offset,
+            ),
+        );
+    }
+
+    if (options.booleans !== undefined) {
+        statements.push(
+            buildBooleanRuntimeHelper(
+                options.booleans.decoderName,
+                options.booleans.trueToken,
+            ),
+        );
+    }
+
+    return statements;
 }

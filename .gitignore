@@ -3,3 +3,4 @@ dist/
 test/out.js
 test/index.js
 test/module.js
+veyl_config.json

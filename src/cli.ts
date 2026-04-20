@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 import chalk from "chalk";
 import path from "node:path";
-import { obfuscateFile } from "./index.js";
-import type { ObfuscationStats } from "./index.js";
+import { DEFAULT_CONFIG_FILE, loadConfigFile, loadDefaultConfigFile, mergeConfig, obfuscateFile } from "./index.js";
+import type { NumberObfuscationOperator, ObfuscationConfigInput, ObfuscationStats } from "./index.js";
 
 interface CliOptions {
     input: string;
     output: string;
+    configFile: string | null;
+    configOverrides: ObfuscationConfigInput;
     help: boolean;
 }
 
 interface CliOptionDefinition {
     flags: string[];
-    target: keyof CliOptions;
+    target: string;
     takesValue: boolean;
     valueName?: string;
     required: boolean;
@@ -37,6 +39,78 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Output JS file to write.",
     },
     {
+        flags: ["-c", "--config"],
+        target: "configFile",
+        takesValue: true,
+        valueName: "path",
+        required: false,
+        description: `Config JSON file. Defaults to ./${DEFAULT_CONFIG_FILE} when present.`,
+    },
+    {
+        flags: ["--obfuscated-strings"],
+        target: "obfuscatedStrings",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Enable or disable string literal obfuscation.",
+    },
+    {
+        flags: ["--obfuscated-numbers"],
+        target: "obfuscatedNumbers",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Enable or disable number literal obfuscation.",
+    },
+    {
+        flags: ["--obfuscated-booleans"],
+        target: "obfuscatedBooleans",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Enable or disable boolean literal obfuscation.",
+    },
+    {
+        flags: ["--randomized-unique-identifiers"],
+        target: "randomizedUniqueIdentifiers",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Use Veyl randomized names instead of esbuild minified identifiers.",
+    },
+    {
+        flags: ["--number-obfuscation-offset"],
+        target: "numberObfuscationOffset",
+        takesValue: true,
+        valueName: "num|randomized",
+        required: false,
+        description: "Number offset for numeric literal obfuscation.",
+    },
+    {
+        flags: ["--number-obfuscation-operator"],
+        target: "numberObfuscationOperator",
+        takesValue: true,
+        valueName: "+|-|*|/|randomized",
+        required: false,
+        description: "Number operator for numeric literal obfuscation.",
+    },
+    {
+        flags: ["--boolean-obfuscation-number"],
+        target: "booleanObfuscationNumber",
+        takesValue: true,
+        valueName: "num|randomized",
+        required: false,
+        description: "Numeric token used for obfuscated true values.",
+    },
+    {
+        flags: ["--unnecessary-depth"],
+        target: "unnecessaryDepth",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Enable or disable unnecessary depth references.",
+    },
+    {
         flags: ["-h", "--help"],
         target: "help",
         takesValue: false,
@@ -49,18 +123,24 @@ function parseCliArgs(argv: string[]): CliOptions {
     const options: CliOptions = {
         input: "",
         output: "",
+        configFile: null,
+        configOverrides: {},
         help: false,
     };
 
     for (let i = 0; i < argv.length; i++) {
-        const token = argv[i];
-        const definition = OPTION_DEFINITIONS.find((item) => item.flags.includes(token));
+        const parsedToken = splitOptionToken(argv[i]);
+        const definition = OPTION_DEFINITIONS.find((item) => item.flags.includes(parsedToken.flag));
 
         if (definition === undefined) {
-            throw new Error(`Unknown option: ${token}`);
+            throw new Error(`Unknown option: ${parsedToken.flag}`);
         }
 
         if (!definition.takesValue) {
+            if (parsedToken.value !== undefined) {
+                throw new Error(`${parsedToken.flag} does not take a value`);
+            }
+
             if (definition.target === "help") {
                 options.help = true;
             }
@@ -68,21 +148,17 @@ function parseCliArgs(argv: string[]): CliOptions {
             continue;
         }
 
-        const value = argv[i + 1];
+        const value = parsedToken.value ?? argv[i + 1];
 
-        if (value === undefined || value.startsWith("-")) {
+        if (value === undefined || (parsedToken.value === undefined && value.startsWith("-"))) {
             throw new Error(`Missing value for ${definition.flags[0]}`);
         }
 
-        if (definition.target === "input") {
-            options.input = value;
-        } else if (definition.target === "output") {
-            options.output = value;
-        } else {
-            throw new Error(`${definition.flags[0]} does not take a value`);
-        }
+        assignCliValue(options, definition.target, value);
 
-        i++;
+        if (parsedToken.value === undefined) {
+            i++;
+        }
     }
 
     if (options.help) {
@@ -90,9 +166,7 @@ function parseCliArgs(argv: string[]): CliOptions {
     }
 
     for (const definition of OPTION_DEFINITIONS) {
-        const value = options[definition.target];
-
-        if (definition.required && (value === "" || value === false)) {
+        if (definition.required && isMissingRequiredOption(options, definition.target)) {
             throw new Error(`Missing required option: ${definition.flags[0]}`);
         }
     }
@@ -105,6 +179,7 @@ function resolveCliPaths(options: CliOptions, cwd: string): CliOptions {
         ...options,
         input: path.resolve(cwd, options.input),
         output: path.resolve(cwd, options.output),
+        configFile: options.configFile === null ? null : path.resolve(cwd, options.configFile),
     };
 }
 
@@ -163,11 +238,17 @@ async function main(): Promise<void> {
     }
 
     const resolved = resolveCliPaths(options, process.cwd());
+    const fileConfig = resolved.configFile === null
+        ? loadDefaultConfigFile(process.cwd())
+        : loadConfigFile(resolved.configFile);
+    const config = mergeConfig(fileConfig, resolved.configOverrides);
+
     printRunHeader(resolved);
 
     const stats = await obfuscateFile({
         input: resolved.input,
         output: resolved.output,
+        config,
     });
 
     printStats(stats);
@@ -179,3 +260,123 @@ main().catch((error: unknown) => {
     process.stderr.write(`${chalk.red("[error]")} ${message}\n`);
     process.exitCode = 1;
 });
+
+function splitOptionToken(token: string): { flag: string; value?: string } {
+    const separatorIndex = token.indexOf("=");
+
+    if (separatorIndex === -1) {
+        return {
+            flag: token,
+        };
+    }
+
+    return {
+        flag: token.slice(0, separatorIndex),
+        value: token.slice(separatorIndex + 1),
+    };
+}
+
+function assignCliValue(options: CliOptions, target: string, value: string): void {
+    switch (target) {
+        case "input":
+            options.input = value;
+            return;
+        case "output":
+            options.output = value;
+            return;
+        case "configFile":
+            options.configFile = value;
+            return;
+        case "obfuscatedStrings":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                features: { obfuscate: { strings: parseBoolean(value, "--obfuscated-strings") } },
+            });
+            return;
+        case "obfuscatedNumbers":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                features: { obfuscate: { numbers: parseBoolean(value, "--obfuscated-numbers") } },
+            });
+            return;
+        case "obfuscatedBooleans":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                features: { obfuscate: { booleans: parseBoolean(value, "--obfuscated-booleans") } },
+            });
+            return;
+        case "randomizedUniqueIdentifiers":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                features: { randomized_unique_identifiers: parseBoolean(value, "--randomized-unique-identifiers") },
+            });
+            return;
+        case "numberObfuscationOffset":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                options: { number_offset: parseNumberOrRandomized(value, "--number-obfuscation-offset") },
+            });
+            return;
+        case "numberObfuscationOperator":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                options: { number_operator: parseNumberOperator(value, "--number-obfuscation-operator") },
+            });
+            return;
+        case "booleanObfuscationNumber":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                options: { boolean_number: parseNumberOrRandomized(value, "--boolean-obfuscation-number") },
+            });
+            return;
+        case "unnecessaryDepth":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                features: { unnecessary_depth: parseBoolean(value, "--unnecessary-depth") },
+            });
+            return;
+        default:
+            throw new Error(`Unsupported option target: ${target}`);
+    }
+}
+
+function isMissingRequiredOption(options: CliOptions, target: string): boolean {
+    switch (target) {
+        case "input":
+            return options.input === "";
+        case "output":
+            return options.output === "";
+        default:
+            return false;
+    }
+}
+
+function parseBoolean(value: string, flag: string): boolean {
+    if (value === "true") {
+        return true;
+    }
+
+    if (value === "false") {
+        return false;
+    }
+
+    throw new Error(`${flag} must be true or false`);
+}
+
+function parseNumberOrRandomized(value: string, flag: string): number | null {
+    if (value === "randomized") {
+        return null;
+    }
+
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed)) {
+        throw new Error(`${flag} must be a finite number or randomized`);
+    }
+
+    return parsed;
+}
+
+function parseNumberOperator(value: string, flag: string): NumberObfuscationOperator | null {
+    if (value === "randomized") {
+        return null;
+    }
+
+    if (value === "+" || value === "-" || value === "*" || value === "/") {
+        return value;
+    }
+
+    throw new Error(`${flag} must be one of +, -, *, /, or randomized`);
+}

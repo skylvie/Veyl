@@ -19,6 +19,45 @@ pnpm build
 node dist/cli.js -i ./input.ts -o ./output.js
 ```
 
+Veyl will also read `./veyl_config.json` by default when that file exists. Pass a different config file with `-c`:
+```sh
+node dist/cli.js -i ./input.ts -o ./output.js -c ./config.json
+```
+
+Supported CLI overrides:
+```sh
+--obfuscated-strings=false|true
+--obfuscated-numbers=false|true
+--obfuscated-booleans=false|true
+--randomized-unique-identifiers=false|true
+--number-obfuscation-offset=<num|randomized>
+--number-obfuscation-operator=<+|-|*|/|randomized>
+--boolean-obfuscation-number=<num|randomized>
+--unnecessary-depth=false|true
+```
+
+Example config file:
+```json
+{
+    "features": {
+        "obfuscate": {
+            "strings": true,
+            "numbers": true,
+            "booleans": true
+        },
+        "randomized_unique_identifiers": true,
+        "unnecessary_depth": true
+    },
+    "options": {
+        "boolean_number": 120,
+        "number_offset": 12,
+        "number_operator": "+"
+    }
+}
+```
+
+Use `null` or `"randomized"` for `boolean_number`, `number_offset`, or `number_operator` to use randomized defaults.
+
 4. Optional: link the CLI command
 ```sh
 pnpm link --global

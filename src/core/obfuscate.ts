@@ -1,5 +1,6 @@
 import { compactOutput, bundleInput } from "./bundler.js";
 import { generate } from "../babel/interop.js";
+import { resolveConfig } from "../utils/config.js";
 import { insertHelperStatements } from "../runtime/index.js";
 import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
@@ -9,10 +10,12 @@ import { NameGenerator } from "../utils/random.js";
 import * as babelParser from "@babel/parser";
 import fs from "node:fs";
 import path from "node:path";
+import type { ObfuscationConfigInput } from "../utils/config.js";
 
 export interface ObfuscateFileOptions {
     input: string;
     output: string;
+    config?: ObfuscationConfigInput;
 }
 
 export interface ObfuscationStats {
@@ -43,10 +46,11 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
     const startedAt = performance.now();
     const input = path.resolve(opts.input);
     const output = path.resolve(opts.output);
+    const config = resolveConfig(opts.config);
 
     const bundle = await bundleInput(input);
-    const transformed = obfuscateCode(bundle.code);
-    const compacted = await compactOutput(transformed.code);
+    const transformed = obfuscateCode(bundle.code, config);
+    const compacted = await compactOutput(transformed.code, !config.features.randomized_unique_identifiers);
 
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, compacted, "utf-8");
@@ -66,7 +70,8 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
     };
 }
 
-export function obfuscateCode(input: string): ObfuscateCodeResult {
+export function obfuscateCode(input: string, configInput?: ObfuscationConfigInput): ObfuscateCodeResult {
+    const config = resolveConfig(configInput);
     const ast = babelParser.parse(input, {
         sourceType: "module",
         strictMode: false,
@@ -75,13 +80,17 @@ export function obfuscateCode(input: string): ObfuscateCodeResult {
 
     const names = new NameGenerator();
 
-    const firstBindingPass = renameBindings(ast, names);
-    const propertyResult = renameProperties(ast, names);
-    const depthResult = addUnnecessaryDepth(ast, names);
-    const literalResult = obfuscateLiterals(ast, names);
+    const firstBindingPass = config.features.randomized_unique_identifiers ? renameBindings(ast, names) : 0;
+    const propertyResult = config.features.randomized_unique_identifiers
+        ? renameProperties(ast, names)
+        : { renamedProperties: 0 };
+    const depthResult = config.features.unnecessary_depth
+        ? addUnnecessaryDepth(ast, names)
+        : { addedReferences: 0 };
+    const literalResult = obfuscateLiterals(ast, names, config);
 
     insertHelperStatements(ast, literalResult.helperNodes);
-    const helperBindingPass = renameBindings(ast, names);
+    const helperBindingPass = config.features.randomized_unique_identifiers ? renameBindings(ast, names) : 0;
 
     const { code } = generate(ast, {
         comments: false,

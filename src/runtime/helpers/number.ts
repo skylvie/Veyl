@@ -1,50 +1,53 @@
-import type { NumberOperatorFamily } from "../index.js";
+import type { NumberObfuscationOperator } from "../../utils/config.js";
 import * as t from "@babel/types";
 
 export function buildNumberRuntimeHelper(
     numberDecoderName: string,
-    numberFamily: NumberOperatorFamily,
+    allowedOperators: readonly NumberObfuscationOperator[],
     numberShift: number,
 ): t.Statement {
-    const numberDecoderStatements = numberFamily === "additive"
-        ? [
-            t.ifStatement(
-                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(0)),
-                t.blockStatement([
-                    t.returnStatement(
-                        t.binaryExpression("-", t.identifier("value"), t.numericLiteral(numberShift)),
-                    ),
-                ]),
-            ),
-            t.ifStatement(
-                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(1)),
-                t.blockStatement([
-                    t.returnStatement(
-                        t.binaryExpression("+", t.identifier("value"), t.numericLiteral(numberShift)),
-                    ),
-                ]),
-            ),
+    const numberDecoderStatements: t.Statement[] = allowedOperators.map((operator) => t.ifStatement(
+        t.binaryExpression("===", t.identifier("op"), t.numericLiteral(encodeNumberOperator(operator))),
+        t.blockStatement([
             t.returnStatement(
-                t.binaryExpression("+", t.identifier("value"), t.numericLiteral(numberShift)),
+                t.binaryExpression(decodeNumberOperator(operator), t.identifier("value"), t.numericLiteral(numberShift)),
             ),
-        ]
-        : [
-            t.ifStatement(
-                t.binaryExpression("===", t.identifier("op"), t.numericLiteral(2)),
-                t.blockStatement([
-                    t.returnStatement(
-                        t.binaryExpression("/", t.identifier("value"), t.numericLiteral(numberShift)),
-                    ),
-                ]),
-            ),
-            t.returnStatement(
-                t.binaryExpression("*", t.identifier("value"), t.numericLiteral(numberShift)),
-            ),
-        ];
+        ]),
+    ));
+
+    numberDecoderStatements.push(
+        t.returnStatement(t.identifier("value")),
+    );
 
     return t.functionDeclaration(
         t.identifier(numberDecoderName),
         [t.identifier("value"), t.identifier("op")],
         t.blockStatement(numberDecoderStatements),
     );
+}
+
+function decodeNumberOperator(operator: NumberObfuscationOperator): NumberObfuscationOperator {
+    switch (operator) {
+        case "+":
+            return "-";
+        case "-":
+            return "+";
+        case "*":
+            return "/";
+        case "/":
+            return "*";
+    }
+}
+
+function encodeNumberOperator(operator: NumberObfuscationOperator): number {
+    switch (operator) {
+        case "+":
+            return 0;
+        case "-":
+            return 1;
+        case "*":
+            return 2;
+        case "/":
+            return 3;
+    }
 }

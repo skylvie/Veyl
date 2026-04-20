@@ -33,11 +33,11 @@ export async function bundleInput(input: string): Promise<BundleResult> {
 }
 
 // Minify output/obfuscated code but keep randomized identifiers
-export async function compactOutput(code: string): Promise<string> {
+export async function compactOutput(code: string, minifyIdentifiers: boolean): Promise<string> {
     const result = await esbuild.transform(code, {
         minifyWhitespace: true,
         minifySyntax: true,
-        minifyIdentifiers: false,
+        minifyIdentifiers,
         format: "esm",
         target: "esnext",
     });
