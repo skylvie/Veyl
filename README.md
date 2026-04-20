@@ -19,49 +19,46 @@ pnpm build
 node dist/cli.js -i ./input.ts -o ./output.js
 ```
 
-Veyl will also read `./veyl_config.json` by default when that file exists. Pass a different config file with `-c`:
-```sh
-node dist/cli.js -i ./input.ts -o ./output.js -c ./config.json
-```
-
-Supported CLI overrides:
-```sh
---obfuscated-strings=false|true
---obfuscated-numbers=false|true
---obfuscated-booleans=false|true
---randomized-unique-identifiers=false|true
---number-obfuscation-offset=<num|randomized>
---number-obfuscation-operator=<+|-|*|/|randomized>
---boolean-obfuscation-number=<num|randomized>
---unnecessary-depth=false|true
-```
-
-Example config file:
-```json
-{
-    "features": {
-        "obfuscate": {
-            "strings": true,
-            "numbers": true,
-            "booleans": true
-        },
-        "randomized_unique_identifiers": true,
-        "unnecessary_depth": true
-    },
-    "options": {
-        "boolean_number": 120,
-        "number_offset": 12,
-        "number_operator": "+"
-    }
-}
-```
-
-Use `null` or `"randomized"` for `boolean_number`, `number_offset`, or `number_operator` to use randomized defaults.
-
 4. Optional: link the CLI command
 ```sh
 pnpm link --global
 veyl -i ./input.ts -o ./output.js
+```
+
+## Configuration System
+Veyl has a verbose configuration system. By default, Veyl will check for a `veyl_config.json` file, but you can pass in the `-c` flag to specify a path. (E.g. `veyl -c config.json`).
+
+### Config File
+```jsonc
+{
+	"features": {
+		"obfuscate": {
+			"strings": true, // Do string obfuscation
+			"numbers": true, // Do number obfuscation
+			"booleans": true // Do boolean obfuscation
+		},
+		"randomized_unique_identifiers": true, // Randomize identifiers (e.g. `_0x1a2b3c`)
+		"unnecessary_depth": true // Add "unnecessary" depth (explained in "How It Works" section)
+	},
+	"options": { // Leave these as "randomized" or `null` to use random values
+		"boolean_number": 120, // Number to use as boolean representation
+		"number_offset": 12, // Number to use as offset
+		"number_operator": "+" // Number operator to use as offset (+, -, *, /)
+	}
+}
+```
+
+### CLI Flags
+You can also use CLI flags instead:
+```
+--obfuscated-strings=true|false
+--obfuscated-numbers=true|false
+--obfuscated-booleans=true|false
+--randomized-unique-identifiers=true|false
+--number-obfuscation-offset=<num|randomized>
+--number-obfuscation-operator=<+|-|*|/|randomized>
+--boolean-obfuscation-number=<num|randomized>
+--unnecessary-depth=true|false
 ```
 
 ## Testing
