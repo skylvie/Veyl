@@ -38,5 +38,14 @@ The code includes the required elements:
 - The same list is used by both `parseCliArgs` and `buildHelpText`, which makes option changes easier to maintain.
 
 ## How It Works
-The TS code is transpiled, bundled, and treeshaken using [esbuild](https://esbuild.github.io/) to JS code. The JS code is then obfuscated.
-Obfuscation consits of many different parts. First, all identifiers are randomized and renamed to things like "_0x1a2b3c". Then, all numbers, strings, and booleans are encoded during the obfuscation script. String encoding first works by taking all strings, putting them into one global array with randomized positioning. Then, each element is base64 encoded, rotated left by 2 bits, and XOR'd. Number encoding works by generating a random offset (For example, +2, -5, etc.) and applying that to each number. Boolean encoding works by instead of using `true` or `false`, take a random number and use that for comparing. Next, string, number, and boolean decoding functions are injected into the obfuscated JS code. Then, the calls to the original strings, numbers, and booleans are replaced to calls to the correct decoding function with the encoded value passed into it. Finally, the code is minified with esbuild.
+Veyl starts by sending the input TS or JS file through [esbuild](https://esbuild.github.io/). esbuild transpiles TypeScript, follows local imports, bundles the program into one ESM JS file, and tree-shakes code that is not used.
+
+After bundling, Veyl parses the JS into an AST and applies the obfuscation passes:
+
+- Local bindings are renamed to randomized names like `_0x1a2b3c`.
+- Local object and class property names are renamed, including matching local member accesses.
+- String literals are moved into a randomized string table. Each stored string is encoded with base64, bit rotation, and XOR, then decoded at runtime by injected helper functions.
+- Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
+- Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
+
+Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. Finally, esbuild minifies the transformed JS while preserving the randomized identifiers.

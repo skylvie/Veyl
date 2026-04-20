@@ -17,12 +17,28 @@ interface VariableDeclaratorPath {
     };
 }
 
+interface ClassDeclarationPath {
+    node: {
+        id: BabelNode | null;
+    };
+}
+
 interface MemberExpressionPath {
     node: {
         computed: boolean;
         object: BabelNode;
         property: BabelNode;
     };
+}
+
+interface MemberExpressionNode extends BabelNode {
+    computed: boolean;
+    object: BabelNode;
+    property: BabelNode;
+}
+
+interface NewExpressionNode extends BabelNode {
+    callee: BabelNode;
 }
 
 interface PropertyRenameResult {
@@ -33,6 +49,8 @@ interface PropertyRenameResult {
 export function renameProperties(ast: object, names: NameGenerator): PropertyRenameResult {
     const propMap = new Map<string, string>();
     const localObjBindings = new Set<string>();
+    const localClassBindings = new Set<string>();
+    const localClassInstanceBindings = new Set<string>();
 
     traverse(ast, {
         "ObjectProperty|ObjectMethod|ClassProperty|ClassMethod|ClassAccessorProperty"(pathNode: PropertyPath) {
@@ -54,6 +72,38 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
                 pathNode.node.init?.type === "ObjectExpression"
             ) {
                 localObjBindings.add(pathNode.node.id.name);
+            }
+
+            if (
+                pathNode.node.id.type === "Identifier" &&
+                typeof pathNode.node.id.name === "string" &&
+                pathNode.node.init?.type === "ClassExpression"
+            ) {
+                localClassBindings.add(pathNode.node.id.name);
+            }
+
+            const init = pathNode.node.init;
+
+            if (init?.type === "NewExpression") {
+                const newExpression = init as NewExpressionNode;
+
+                if (
+                    pathNode.node.id.type === "Identifier" &&
+                    typeof pathNode.node.id.name === "string" &&
+                    newExpression.callee.type === "Identifier" &&
+                    localClassBindings.has(newExpression.callee.name!)
+                ) {
+                    localClassInstanceBindings.add(pathNode.node.id.name);
+                }
+            }
+        },
+
+        ClassDeclaration(pathNode: ClassDeclarationPath) {
+            if (
+                pathNode.node.id?.type === "Identifier" &&
+                typeof pathNode.node.id.name === "string"
+            ) {
+                localClassBindings.add(pathNode.node.id.name);
             }
         },
     });
@@ -104,11 +154,7 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
                 return;
             }
 
-            if (pathNode.node.object.type !== "Identifier") {
-                return;
-            }
-
-            if (!localObjBindings.has(pathNode.node.object.name!)) {
+            if (!isLocalPropertyAccess(pathNode.node.object, localObjBindings, localClassInstanceBindings)) {
                 return;
             }
 
@@ -126,6 +172,32 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
     };
 }
 
+function isLocalPropertyAccess(
+    node: BabelNode,
+    localObjBindings: Set<string>,
+    localClassInstanceBindings: Set<string>,
+): boolean {
+    if (node.type === "ThisExpression") {
+        return true;
+    }
+
+    if (node.type === "Identifier") {
+        return localObjBindings.has(node.name!) || localClassInstanceBindings.has(node.name!);
+    }
+
+    if (node.type !== "MemberExpression" && node.type !== "OptionalMemberExpression") {
+        return false;
+    }
+
+    const memberExpression = node as MemberExpressionNode;
+
+    if (memberExpression.computed || memberExpression.property.type !== "Identifier") {
+        return false;
+    }
+
+    return isLocalPropertyAccess(memberExpression.object, localObjBindings, localClassInstanceBindings);
+}
+
 // Leaves externally meaningful property names alone.
 function shouldSkipPropertyRename(pathNode: PropertyPath): boolean {
     const name = staticKeyName(pathNode.node.key);
@@ -139,7 +211,8 @@ function shouldSkipPropertyRename(pathNode: PropertyPath): boolean {
         name === "colors" ||
         name === "showHidden" ||
         name === "maxArrayLength" ||
-        name === "maxStringLength"
+        name === "maxStringLength" ||
+        name === "constructor"
     ) {
         return true;
     }
