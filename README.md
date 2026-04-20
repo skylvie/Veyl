@@ -7,7 +7,6 @@ pnpm i -g @skylvi/veyl
 ```
 
 ### Install From Source
-
 1. Clone the repo
 ```sh
 git clone https://github.com/skylvie/veyl

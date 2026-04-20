@@ -1,13 +1,13 @@
 {
     "name": "@skylvi/veyl",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "type": "module",
     "private": false,
     "bin": {
         "veyl": "./dist/cli.js"
     },
     "files": [
-        "dist",
+        "dist/**/*",
         ".gitignore",
         "LICENSE",
         "package.json",
