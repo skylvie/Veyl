@@ -27,6 +27,10 @@ veyl -i ./input.ts -o ./output.js
 
 ## Testing
 ```sh
+pnpm test
+```
+or
+```sh
 cd test
 chmod +x ./run.sh
 ./run.sh
