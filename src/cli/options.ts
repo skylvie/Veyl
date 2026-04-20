@@ -1,8 +1,8 @@
-import type { LogLevel, NumberObfuscationOperator } from "../types/config.js";
-import type { CliOptionDefinition, CliOptions } from "../types/cli.js";
-import { DEFAULT_CONFIG_FILE, mergeConfig } from "../config/index.js";
-import chalk from "chalk";
 import path from "node:path";
+import chalk from "chalk";
+import { DEFAULT_CONFIG_FILE, mergeConfig } from "../config/index.js";
+import type { CliOptionDefinition, CliOptions } from "../types/cli.js";
+import type { LogLevel, NumberObfuscationOperator } from "../types/config.js";
 
 const OPTION_DEFINITIONS: CliOptionDefinition[] = [
     {
@@ -199,7 +199,8 @@ export function buildHelpText(commandName: string): string {
 
     for (const option of OPTION_DEFINITIONS) {
         const flagText = chalk.green(option.flags.join(", "));
-        const valueText = option.valueName === undefined ? "" : chalk.gray(` <${option.valueName}>`);
+        const valueText =
+            option.valueName === undefined ? "" : chalk.gray(` <${option.valueName}>`);
 
         lines.push(`  ${flagText}${valueText}  ${option.description}`);
     }
@@ -270,22 +271,33 @@ function assignCliValue(options: CliOptions, target: string, value: string): voi
             return;
         case "randomizedUniqueIdentifiers":
             options.configOverrides = mergeConfig(options.configOverrides, {
-                features: { randomized_unique_identifiers: parseBoolean(value, "--randomized-unique-identifiers") },
+                features: {
+                    randomized_unique_identifiers: parseBoolean(
+                        value,
+                        "--randomized-unique-identifiers"
+                    ),
+                },
             });
             return;
         case "numberObfuscationOffset":
             options.configOverrides = mergeConfig(options.configOverrides, {
-                options: { number_offset: parseNumberOrRandomized(value, "--number-obfuscation-offset") },
+                options: {
+                    number_offset: parseNumberOrRandomized(value, "--number-obfuscation-offset"),
+                },
             });
             return;
         case "numberObfuscationOperator":
             options.configOverrides = mergeConfig(options.configOverrides, {
-                options: { number_operator: parseNumberOperator(value, "--number-obfuscation-operator") },
+                options: {
+                    number_operator: parseNumberOperator(value, "--number-obfuscation-operator"),
+                },
             });
             return;
         case "booleanObfuscationNumber":
             options.configOverrides = mergeConfig(options.configOverrides, {
-                options: { boolean_number: parseNumberOrRandomized(value, "--boolean-obfuscation-number") },
+                options: {
+                    boolean_number: parseNumberOrRandomized(value, "--boolean-obfuscation-number"),
+                },
             });
             return;
         case "unnecessaryDepth":

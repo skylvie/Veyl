@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import type { LogLevel } from "./types/config.js";
-import { loadCliConfig } from "./cli/config.js";
-import { mergeConfig, obfuscateFile, resolveConfig } from "./index.js";
-import { buildHelpText, parseCliArgs, readLogLevelFlag, resolveCliPaths } from "./cli/options.js";
-import { buildVersionText } from "./cli/projectInfo.js";
-import { printRunHeader, printStats } from "./cli/output.js";
-import { createLogger } from "./utils/logger.js";
 import chalk from "chalk";
+import { loadCliConfig } from "./cli/config.js";
+import { buildHelpText, parseCliArgs, readLogLevelFlag, resolveCliPaths } from "./cli/options.js";
+import { printRunHeader, printStats } from "./cli/output.js";
+import { buildVersionText } from "./cli/projectInfo.js";
+import { mergeConfig, obfuscateFile, resolveConfig } from "./index.js";
+import type { LogLevel } from "./types/config.js";
+import { createLogger } from "./utils/logger.js";
 
 let activeLogLevel: LogLevel = "info";
 

@@ -1,8 +1,13 @@
-import type { BabelNode } from "../types/babel.js";
-import type { NameGenerator } from "../utils/random.js";
-import type { CallablePath, IdentifierNode, StatementPath, UnnecessaryDepthResult } from "../types/transforms.js";
-import { traverse } from "../babel/interop.js";
 import * as t from "@babel/types";
+import { traverse } from "../babel/interop.js";
+import type { BabelNode } from "../types/babel.js";
+import type {
+    CallablePath,
+    IdentifierNode,
+    StatementPath,
+    UnnecessaryDepthResult,
+} from "../types/transforms.js";
+import type { NameGenerator } from "../utils/random.js";
 
 // Adds an extra local reference before direct function and class constructor calls
 export function addUnnecessaryDepth(ast: object, names: NameGenerator): UnnecessaryDepthResult {
@@ -46,9 +51,9 @@ function addReferenceBeforeCall(pathNode: CallablePath, names: NameGenerator): b
         t.variableDeclaration("const", [
             t.variableDeclarator(
                 t.identifier(aliasName),
-                t.cloneNode(callee as unknown as t.Expression),
+                t.cloneNode(callee as unknown as t.Expression)
             ),
-        ]),
+        ])
     );
 
     pathNode.node.callee = t.identifier(aliasName) as unknown as BabelNode;
@@ -67,7 +72,7 @@ function isAliasableIdentifier(node: BabelNode): node is IdentifierNode {
 function canInsertStatementBefore(statementPath: StatementPath): boolean {
     const parentType = statementPath.parent?.type;
 
-    return parentType === "Program" ||
-        parentType === "BlockStatement" ||
-        parentType === "SwitchCase";
+    return (
+        parentType === "Program" || parentType === "BlockStatement" || parentType === "SwitchCase"
+    );
 }

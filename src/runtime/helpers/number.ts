@@ -1,28 +1,36 @@
-import type { NumberObfuscationOperator } from "../../types/config.js";
 import * as t from "@babel/types";
+import type { NumberObfuscationOperator } from "../../types/config.js";
 
 export function buildNumberRuntimeHelper(
     numberDecoderName: string,
     allowedOperators: readonly NumberObfuscationOperator[],
-    numberShift: number,
+    numberShift: number
 ): t.Statement {
-    const numberDecoderStatements: t.Statement[] = allowedOperators.map((operator) => t.ifStatement(
-        t.binaryExpression("===", t.identifier("op"), t.numericLiteral(encodeNumberOperator(operator))),
-        t.blockStatement([
-            t.returnStatement(
-                t.binaryExpression(decodeNumberOperator(operator), t.identifier("value"), t.numericLiteral(numberShift)),
+    const numberDecoderStatements: t.Statement[] = allowedOperators.map((operator) =>
+        t.ifStatement(
+            t.binaryExpression(
+                "===",
+                t.identifier("op"),
+                t.numericLiteral(encodeNumberOperator(operator))
             ),
-        ]),
-    ));
-
-    numberDecoderStatements.push(
-        t.returnStatement(t.identifier("value")),
+            t.blockStatement([
+                t.returnStatement(
+                    t.binaryExpression(
+                        decodeNumberOperator(operator),
+                        t.identifier("value"),
+                        t.numericLiteral(numberShift)
+                    )
+                ),
+            ])
+        )
     );
+
+    numberDecoderStatements.push(t.returnStatement(t.identifier("value")));
 
     return t.functionDeclaration(
         t.identifier(numberDecoderName),
         [t.identifier("value"), t.identifier("op")],
-        t.blockStatement(numberDecoderStatements),
+        t.blockStatement(numberDecoderStatements)
     );
 }
 

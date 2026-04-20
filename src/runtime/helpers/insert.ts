@@ -1,5 +1,5 @@
+import type * as t from "@babel/types";
 import type { BabelNode } from "../../types/babel.js";
-import * as t from "@babel/types";
 
 export function insertHelperStatements(ast: object, helpers: t.Statement[]): void {
     const program = (ast as { program?: { body?: BabelNode[] } }).program;
@@ -10,10 +10,7 @@ export function insertHelperStatements(ast: object, helpers: t.Statement[]): voi
 
     let insertAt = 0;
 
-    while (
-        insertAt < program.body.length &&
-        program.body[insertAt].type === "ImportDeclaration"
-    ) {
+    while (insertAt < program.body.length && program.body[insertAt].type === "ImportDeclaration") {
         insertAt++;
     }
 

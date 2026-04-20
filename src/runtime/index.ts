@@ -1,8 +1,8 @@
+import type * as t from "@babel/types";
 import type { RuntimeHelperOptions } from "../types/runtime.js";
 import { buildBooleanRuntimeHelper } from "./helpers/boolean.js";
 import { buildNumberRuntimeHelper } from "./helpers/number.js";
 import { buildStringRuntimeHelpers } from "./helpers/string.js";
-import * as t from "@babel/types";
 
 export { insertHelperStatements } from "./helpers/insert.js";
 
@@ -17,8 +17,8 @@ export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[
                 options.strings.accessorName,
                 options.strings.decoderName,
                 options.strings.encodedTable,
-                options.strings.xorKey,
-            ),
+                options.strings.xorKey
+            )
         );
     }
 
@@ -27,17 +27,14 @@ export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[
             buildNumberRuntimeHelper(
                 options.numbers.decoderName,
                 options.numbers.allowedOperators,
-                options.numbers.offset,
-            ),
+                options.numbers.offset
+            )
         );
     }
 
     if (options.booleans !== undefined) {
         statements.push(
-            buildBooleanRuntimeHelper(
-                options.booleans.decoderName,
-                options.booleans.trueToken,
-            ),
+            buildBooleanRuntimeHelper(options.booleans.decoderName, options.booleans.trueToken)
         );
     }
 

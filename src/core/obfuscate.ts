@@ -1,4 +1,6 @@
-import { compactOutput, bundleInput } from "./bundler.js";
+import fs from "node:fs";
+import path from "node:path";
+import * as babelParser from "@babel/parser";
 import { generate } from "../babel/interop.js";
 import { resolveConfig } from "../config/index.js";
 import { insertHelperStatements } from "../runtime/index.js";
@@ -6,12 +8,10 @@ import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";
 import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
-import { NameGenerator } from "../utils/random.js";
-import * as babelParser from "@babel/parser";
-import fs from "node:fs";
-import path from "node:path";
 import type { ObfuscationConfigInput } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
+import { NameGenerator } from "../utils/random.js";
+import { bundleInput, compactOutput } from "./bundler.js";
 
 /**
  * Bundles a TypeScript or JavaScript entry file, obfuscates the bundled output,
@@ -27,7 +27,10 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
 
     const bundle = await bundleInput(input);
     const transformed = obfuscateCode(bundle.code, config);
-    const compacted = await compactOutput(transformed.code, !config.features.randomized_unique_identifiers);
+    const compacted = await compactOutput(
+        transformed.code,
+        !config.features.randomized_unique_identifiers
+    );
 
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, compacted, "utf-8");
@@ -57,7 +60,10 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
  * Use `obfuscateFile` instead when Veyl should handle esbuild bundling and
  * writing the output file for you.
  */
-export function obfuscateCode(input: string, configInput?: ObfuscationConfigInput): ObfuscateCodeResult {
+export function obfuscateCode(
+    input: string,
+    configInput?: ObfuscationConfigInput
+): ObfuscateCodeResult {
     const config = resolveConfig(configInput);
     const ast = babelParser.parse(input, {
         sourceType: "module",
@@ -67,7 +73,9 @@ export function obfuscateCode(input: string, configInput?: ObfuscationConfigInpu
 
     const names = new NameGenerator();
 
-    const firstBindingPass = config.features.randomized_unique_identifiers ? renameBindings(ast, names) : 0;
+    const firstBindingPass = config.features.randomized_unique_identifiers
+        ? renameBindings(ast, names)
+        : 0;
     const propertyResult = config.features.randomized_unique_identifiers
         ? renameProperties(ast, names)
         : { renamedProperties: 0 };
@@ -77,7 +85,9 @@ export function obfuscateCode(input: string, configInput?: ObfuscationConfigInpu
     const literalResult = obfuscateLiterals(ast, names, config);
 
     insertHelperStatements(ast, literalResult.helperNodes);
-    const helperBindingPass = config.features.randomized_unique_identifiers ? renameBindings(ast, names) : 0;
+    const helperBindingPass = config.features.randomized_unique_identifiers
+        ? renameBindings(ast, names)
+        : 0;
 
     const { code } = generate(ast, {
         comments: false,

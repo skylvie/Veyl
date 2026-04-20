@@ -1,6 +1,6 @@
+import type * as t from "@babel/types";
 import type { BabelNode, PropKeyNode } from "./babel.js";
 import type { NumberObfuscationOperator } from "./config.js";
-import type * as t from "@babel/types";
 
 export interface LiteralObfuscationResult {
     helperNodes: t.Statement[];

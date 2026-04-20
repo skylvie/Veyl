@@ -1,8 +1,12 @@
-import type { LogLevel, NumberObfuscationOperator, ObfuscationConfigInput } from "../types/config.js";
-import { DEFAULT_CONFIG_FILE } from "./defaults.js";
-import { isLogLevel, isNumberObfuscationOperator, isPlainObject } from "./guards.js";
 import fs from "node:fs";
 import path from "node:path";
+import type {
+    LogLevel,
+    NumberObfuscationOperator,
+    ObfuscationConfigInput,
+} from "../types/config.js";
+import { DEFAULT_CONFIG_FILE } from "./defaults.js";
+import { isLogLevel, isNumberObfuscationOperator, isPlainObject } from "./guards.js";
 
 /**
  * Reads and validates a Veyl JSON config file from disk.
@@ -33,14 +37,30 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             randomized_unique_identifiers: readOptionalBoolean(
                 features,
                 "randomized_unique_identifiers",
-                "features.randomized_unique_identifiers",
+                "features.randomized_unique_identifiers"
             ),
-            unnecessary_depth: readOptionalBoolean(features, "unnecessary_depth", "features.unnecessary_depth"),
+            unnecessary_depth: readOptionalBoolean(
+                features,
+                "unnecessary_depth",
+                "features.unnecessary_depth"
+            ),
         },
         options: {
-            boolean_number: readOptionalNumberOrNull(options, "boolean_number", "options.boolean_number"),
-            number_offset: readOptionalNumberOrNull(options, "number_offset", "options.number_offset"),
-            number_operator: readOptionalNumberOperator(options, "number_operator", "options.number_operator"),
+            boolean_number: readOptionalNumberOrNull(
+                options,
+                "boolean_number",
+                "options.boolean_number"
+            ),
+            number_offset: readOptionalNumberOrNull(
+                options,
+                "number_offset",
+                "options.number_offset"
+            ),
+            number_operator: readOptionalNumberOperator(
+                options,
+                "number_operator",
+                "options.number_operator"
+            ),
         },
     };
 }
@@ -81,7 +101,7 @@ function readObject(input: unknown, key: string): Record<string, unknown> | unde
 function readOptionalBoolean(
     input: Record<string, unknown> | undefined,
     key: string,
-    label: string,
+    label: string
 ): boolean | undefined {
     if (input === undefined || input[key] === undefined) {
         return undefined;
@@ -97,7 +117,7 @@ function readOptionalBoolean(
 function readOptionalLogLevel(
     input: Record<string, unknown>,
     key: string,
-    label: string,
+    label: string
 ): LogLevel | undefined {
     if (input[key] === undefined) {
         return undefined;
@@ -113,7 +133,7 @@ function readOptionalLogLevel(
 function readOptionalNumberOrNull(
     input: Record<string, unknown> | undefined,
     key: string,
-    label: string,
+    label: string
 ): number | null | undefined {
     if (input === undefined || input[key] === undefined) {
         return undefined;
@@ -133,7 +153,7 @@ function readOptionalNumberOrNull(
 function readOptionalNumberOperator(
     input: Record<string, unknown> | undefined,
     key: string,
-    label: string,
+    label: string
 ): NumberObfuscationOperator | null | undefined {
     if (input === undefined || input[key] === undefined) {
         return undefined;

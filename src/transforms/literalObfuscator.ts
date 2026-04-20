@@ -1,14 +1,17 @@
+import crypto from "node:crypto";
+import * as t from "@babel/types";
+import { traverse } from "../babel/interop.js";
+import {
+    isDirectiveLiteral,
+    isModuleStringLiteral,
+    isPropertyKeyNode,
+} from "../babel/predicates.js";
+import { buildRuntimeHelpers } from "../runtime/index.js";
+import type { BabelNode, BabelNodePath } from "../types/babel.js";
 import type { NumberObfuscationOperator, ObfuscationConfig } from "../types/config.js";
 import type { LiteralObfuscationResult } from "../types/transforms.js";
-import type { BabelNode, BabelNodePath } from "../types/babel.js";
 import type { NameGenerator } from "../utils/random.js";
-import { traverse } from "../babel/interop.js";
-import { isDirectiveLiteral, isModuleStringLiteral, isPropertyKeyNode } from "../babel/predicates.js";
-import { buildRuntimeHelpers } from "../runtime/index.js";
 import { encodeStringLiteralValue, randomAsciiString } from "../utils/random.js";
-import * as t from "@babel/types";
-import crypto from "node:crypto";
-
 
 const ADDITIVE_NUMBER_SHIFT_MIN = 100_000;
 const ADDITIVE_NUMBER_SHIFT_MAX = 999_999;
@@ -21,7 +24,7 @@ const MULTIPLICATIVE_NUMBER_OPERATORS: readonly NumberObfuscationOperator[] = ["
 export function obfuscateLiterals(
     ast: object,
     names: NameGenerator,
-    config: ObfuscationConfig,
+    config: ObfuscationConfig
 ): LiteralObfuscationResult {
     const runtimeOptions: Parameters<typeof buildRuntimeHelpers>[0] = {};
     let stringCount = 0;
@@ -44,7 +47,11 @@ export function obfuscateLiterals(
                     return;
                 }
 
-                if (isDirectiveLiteral(pathNode) || isModuleStringLiteral(pathNode) || isPropertyKeyNode(pathNode)) {
+                if (
+                    isDirectiveLiteral(pathNode) ||
+                    isModuleStringLiteral(pathNode) ||
+                    isPropertyKeyNode(pathNode)
+                ) {
                     return;
                 }
 
@@ -56,20 +63,32 @@ export function obfuscateLiterals(
         const availableIndices = Array.from({ length: encodedStringTable.length }, (_, idx) => idx);
 
         for (let i = 0; i < encodedStringTable.length; i++) {
-            encodedStringTable[i] = chunkEncodedString(encodeStringLiteralValue(randomAsciiString(), stringXorKey));
+            encodedStringTable[i] = chunkEncodedString(
+                encodeStringLiteralValue(randomAsciiString(), stringXorKey)
+            );
         }
 
         for (const literalPath of stringLiteralPaths) {
+            const literalValue = literalPath.node?.value;
+
+            if (typeof literalValue !== "string") {
+                continue;
+            }
+
             const pickAt = crypto.randomInt(0, availableIndices.length);
             const tableIndex = availableIndices[pickAt];
 
             availableIndices.splice(pickAt, 1);
-            encodedStringTable[tableIndex] = chunkEncodedString(encodeStringLiteralValue(literalPath.node!.value as string, stringXorKey));
+            encodedStringTable[tableIndex] = chunkEncodedString(
+                encodeStringLiteralValue(literalValue, stringXorKey)
+            );
 
             literalPath.replaceWith(
                 t.callExpression(t.identifier(stringDecoderName), [
-                    t.callExpression(t.identifier(stringAccessorName), [t.numericLiteral(tableIndex)]),
-                ]) as unknown as BabelNode,
+                    t.callExpression(t.identifier(stringAccessorName), [
+                        t.numericLiteral(tableIndex),
+                    ]),
+                ]) as unknown as BabelNode
             );
         }
 
@@ -85,9 +104,10 @@ export function obfuscateLiterals(
 
     if (config.features.obfuscate.numbers) {
         const numberDecoderName = names.freshIdentifier();
-        const allowedOperators = config.options.number_operator === null
-            ? pickNumberOperatorFamily()
-            : [config.options.number_operator];
+        const allowedOperators =
+            config.options.number_operator === null
+                ? pickNumberOperatorFamily()
+                : [config.options.number_operator];
         numberOffset = config.options.number_offset ?? randomNumberOffset(allowedOperators);
         const numericLiteralPaths: BabelNodePath[] = [];
 
@@ -120,7 +140,7 @@ export function obfuscateLiterals(
                 t.callExpression(t.identifier(numberDecoderName), [
                     t.numericLiteral(encoded),
                     t.numericLiteral(opToken),
-                ]) as unknown as BabelNode,
+                ]) as unknown as BabelNode
             );
 
             numberCount++;
@@ -161,7 +181,7 @@ export function obfuscateLiterals(
                 pathNode.replaceWith(
                     t.callExpression(t.identifier(boolDecoderName), [
                         t.numericLiteral(marker),
-                    ]) as unknown as BabelNode,
+                    ]) as unknown as BabelNode
                 );
 
                 booleanCount++;
@@ -201,7 +221,9 @@ function chunkEncodedString(input: string): string[] {
     return chunks;
 }
 
-function pickNumberOperator(operators: readonly NumberObfuscationOperator[]): NumberObfuscationOperator {
+function pickNumberOperator(
+    operators: readonly NumberObfuscationOperator[]
+): NumberObfuscationOperator {
     return operators[crypto.randomInt(0, operators.length)];
 }
 
@@ -211,7 +233,11 @@ function pickNumberOperatorFamily(): readonly NumberObfuscationOperator[] {
         : MULTIPLICATIVE_NUMBER_OPERATORS;
 }
 
-function encodeNumber(original: number, operator: NumberObfuscationOperator, offset: number): number {
+function encodeNumber(
+    original: number,
+    operator: NumberObfuscationOperator,
+    offset: number
+): number {
     switch (operator) {
         case "+":
             return original + offset;
@@ -230,7 +256,10 @@ function randomNumberOffset(operators: readonly NumberObfuscationOperator[]): nu
     }
 
     if (operators.includes("*")) {
-        return crypto.randomInt(MULTIPLICATIVE_NUMBER_SHIFT_MIN, MULTIPLICATIVE_NUMBER_SHIFT_MAX + 1);
+        return crypto.randomInt(
+            MULTIPLICATIVE_NUMBER_SHIFT_MIN,
+            MULTIPLICATIVE_NUMBER_SHIFT_MAX + 1
+        );
     }
 
     if (operators.includes("+") || operators.includes("-")) {

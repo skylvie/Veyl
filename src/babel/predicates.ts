@@ -25,9 +25,11 @@ export function isModuleStringLiteral(pathNode: BabelNodePath): boolean {
         return false;
     }
 
-    return pathNode.parent.type === "ImportDeclaration" ||
+    return (
+        pathNode.parent.type === "ImportDeclaration" ||
         pathNode.parent.type === "ExportAllDeclaration" ||
-        pathNode.parent.type === "ExportNamedDeclaration";
+        pathNode.parent.type === "ExportNamedDeclaration"
+    );
 }
 
 export function isDirectiveLiteral(pathNode: BabelNodePath): boolean {
@@ -35,17 +37,11 @@ export function isDirectiveLiteral(pathNode: BabelNodePath): boolean {
 }
 
 export function staticKeyName(node: BabelNode): string | null {
-    if (
-        node.type === "Identifier" &&
-        typeof node.name === "string"
-    ) {
+    if (node.type === "Identifier" && typeof node.name === "string") {
         return node.name;
     }
 
-    if (
-        node.type === "StringLiteral" &&
-        typeof node.value === "string"
-    ) {
+    if (node.type === "StringLiteral" && typeof node.value === "string") {
         return node.value as string;
     }
 

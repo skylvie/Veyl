@@ -160,6 +160,17 @@ chmod +x ./run.sh
 ./run.sh --rm-js # Remove JS files
 ```
 
+## Formatting and Linting
+Veyl uses [Biome](https://biomejs.dev/) for formatting, import organization, and linting.
+
+```sh
+pnpm lint      # Lint src
+pnpm lint:fix  # Apply lint fixes in src
+pnpm format    # Format src
+pnpm check     # Apply Biome safe fixes and checks in src
+pnpm typecheck # TypeScript only
+```
+
 ## How It Works
 Veyl starts by sending the input TS or JS file through [esbuild](https://esbuild.github.io/). esbuild transpiles TS, follows local imports, bundles the program into one ESM JS file, and tree-shakes code that is not used.
 

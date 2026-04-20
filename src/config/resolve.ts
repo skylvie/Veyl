@@ -10,18 +10,31 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
         log_level: input?.log_level ?? DEFAULT_OBFUSCATION_CONFIG.log_level,
         features: {
             obfuscate: {
-                strings: input?.features?.obfuscate?.strings ?? DEFAULT_OBFUSCATION_CONFIG.features.obfuscate.strings,
-                numbers: input?.features?.obfuscate?.numbers ?? DEFAULT_OBFUSCATION_CONFIG.features.obfuscate.numbers,
-                booleans: input?.features?.obfuscate?.booleans ?? DEFAULT_OBFUSCATION_CONFIG.features.obfuscate.booleans,
+                strings:
+                    input?.features?.obfuscate?.strings ??
+                    DEFAULT_OBFUSCATION_CONFIG.features.obfuscate.strings,
+                numbers:
+                    input?.features?.obfuscate?.numbers ??
+                    DEFAULT_OBFUSCATION_CONFIG.features.obfuscate.numbers,
+                booleans:
+                    input?.features?.obfuscate?.booleans ??
+                    DEFAULT_OBFUSCATION_CONFIG.features.obfuscate.booleans,
             },
-            randomized_unique_identifiers: input?.features?.randomized_unique_identifiers ??
+            randomized_unique_identifiers:
+                input?.features?.randomized_unique_identifiers ??
                 DEFAULT_OBFUSCATION_CONFIG.features.randomized_unique_identifiers,
-            unnecessary_depth: input?.features?.unnecessary_depth ?? DEFAULT_OBFUSCATION_CONFIG.features.unnecessary_depth,
+            unnecessary_depth:
+                input?.features?.unnecessary_depth ??
+                DEFAULT_OBFUSCATION_CONFIG.features.unnecessary_depth,
         },
         options: {
-            boolean_number: input?.options?.boolean_number ?? DEFAULT_OBFUSCATION_CONFIG.options.boolean_number,
-            number_offset: input?.options?.number_offset ?? DEFAULT_OBFUSCATION_CONFIG.options.number_offset,
-            number_operator: input?.options?.number_operator ?? DEFAULT_OBFUSCATION_CONFIG.options.number_operator,
+            boolean_number:
+                input?.options?.boolean_number ?? DEFAULT_OBFUSCATION_CONFIG.options.boolean_number,
+            number_offset:
+                input?.options?.number_offset ?? DEFAULT_OBFUSCATION_CONFIG.options.number_offset,
+            number_operator:
+                input?.options?.number_operator ??
+                DEFAULT_OBFUSCATION_CONFIG.options.number_operator,
         },
     };
 
@@ -38,7 +51,7 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
  */
 export function mergeConfig(
     base: ObfuscationConfigInput,
-    override: ObfuscationConfigInput,
+    override: ObfuscationConfigInput
 ): ObfuscationConfigInput {
     return {
         log_level: override.log_level ?? base.log_level,
@@ -47,9 +60,11 @@ export function mergeConfig(
                 ...base.features?.obfuscate,
                 ...override.features?.obfuscate,
             },
-            randomized_unique_identifiers: override.features?.randomized_unique_identifiers ??
+            randomized_unique_identifiers:
+                override.features?.randomized_unique_identifiers ??
                 base.features?.randomized_unique_identifiers,
-            unnecessary_depth: override.features?.unnecessary_depth ?? base.features?.unnecessary_depth,
+            unnecessary_depth:
+                override.features?.unnecessary_depth ?? base.features?.unnecessary_depth,
         },
         options: {
             ...base.options,

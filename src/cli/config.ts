@@ -1,6 +1,6 @@
-import type { CliOptions, LoadedConfig } from "../types/cli.js";
-import { DEFAULT_CONFIG_FILE, loadConfigFile, loadDefaultConfigFile } from "../config/index.js";
 import path from "node:path";
+import { DEFAULT_CONFIG_FILE, loadConfigFile, loadDefaultConfigFile } from "../config/index.js";
+import type { CliOptions, LoadedConfig } from "../types/cli.js";
 
 export function loadCliConfig(options: CliOptions, cwd: string): LoadedConfig {
     if (options.configFile !== null) {

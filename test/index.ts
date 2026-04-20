@@ -1,9 +1,4 @@
-import {
-    buildImportedMessage,
-    importedFlag,
-    importedNumber,
-    ImportedWorker,
-} from "./module.js";
+import { buildImportedMessage, ImportedWorker, importedFlag, importedNumber } from "./module.js";
 
 const localSeed = 14;
 const localLabel = "local-string";

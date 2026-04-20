@@ -1,5 +1,5 @@
-import type { GenerateFn, TraverseFn } from "../types/babel.js";
 import { createRequire } from "node:module";
+import type { GenerateFn, TraverseFn } from "../types/babel.js";
 
 /*
     TS with `module: NodeNext` can resolve CJS Babel packages as module namespace values, 
@@ -8,12 +8,8 @@ import { createRequire } from "node:module";
 
 const requireFromModule = createRequire(import.meta.url);
 
-export const traverse = (
-    requireFromModule("@babel/traverse").default ??
-    requireFromModule("@babel/traverse")
-) as TraverseFn;
+export const traverse = (requireFromModule("@babel/traverse").default ??
+    requireFromModule("@babel/traverse")) as TraverseFn;
 
-export const generate = (
-    requireFromModule("@babel/generator").default ??
-    requireFromModule("@babel/generator")
-) as GenerateFn;
+export const generate = (requireFromModule("@babel/generator").default ??
+    requireFromModule("@babel/generator")) as GenerateFn;

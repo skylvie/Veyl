@@ -1,6 +1,6 @@
 {
     "name": "@skylvi/veyl",
-    "version": "1.2.5",
+    "version": "1.2.6",
     "type": "module",
     "private": false,
     "bin": {
@@ -26,7 +26,11 @@
     "scripts": {
         "build": "tsc --project tsconfig.json",
         "start": "node dist/cli.js",
-        "check": "tsc --project tsconfig.json --noEmit",
+        "typecheck": "tsc --project tsconfig.json --noEmit",
+        "lint": "biome lint src",
+        "lint:fix": "biome lint --write src",
+        "format": "biome format --write src",
+        "check": "biome check --write src",
         "test": "zsh ./test/test.sh",
         "cloc": "cloc --exclude-dir=dist,node_modules --exclude-lang=YAML ."
     },
@@ -40,6 +44,7 @@
         "esbuild": "^0.28.0"
     },
     "devDependencies": {
+        "@biomejs/biome": "^2.4.12",
         "@types/babel__generator": "^7.27.0",
         "@types/babel__traverse": "^7.28.0",
         "@types/node": "^25.6.0",
