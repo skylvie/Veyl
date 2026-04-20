@@ -3,7 +3,7 @@ A standalone TS/JS obfuscator made for my AP CSP create task.
 
 ## Installation
 ```sh
-pnpm i -g veyl
+pnpm i -g @skylvi/veyl
 ```
 
 ### Install From Source
@@ -86,12 +86,12 @@ import {
     type ObfuscateCodeResult,
     type ObfuscationConfigInput,
     type ObfuscationStats,
-} from "veyl";
+} from "@skylvi/veyl";
 ```
 
 ### Obfuscate a file
 ```ts
-import { obfuscateFile } from "veyl";
+import { obfuscateFile } from "@skylvi/veyl";
 
 const stats = await obfuscateFile({
     input: "./src/index.ts",
@@ -119,7 +119,7 @@ console.log(stats.output, stats.outputBytes);
 
 ### Obfuscate Code Directly
 ```ts
-import { obfuscateCode } from "veyl";
+import { obfuscateCode } from "@skylvi/veyl";
 
 const result = obfuscateCode("const answer = 42; console.log(answer);", {
     features: {
