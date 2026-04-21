@@ -44,7 +44,7 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 			"booleans": true // Do boolean obfuscation
 		},
 		"randomized_unique_identifiers": true, // Randomize identifiers (e.g. `_0x1a2b3c`)
-		"unnecessary_depth": true, // Add "unnecessary" depth (explained in "How It Works" section)
+		"unnecessary_depth": false, // Add "unnecessary" depth (explained in "How It Works" section)
 		"dead_code_injection": false, // Insert unreachable decoy code blocks
 		"control_flow_flattening": false, // Flatten eligible statement runs into a state machine
 		"simplify": false, // Apply compacting rewrites such as merged declarations and conditional returns
@@ -164,7 +164,7 @@ console.log(result.code);
 - [ ] Split (`"" + ""`) string option for string obfuscation
 - [ ] Expression option (`1*2/4+4-5`) for number obfuscation
 - [x] Control flow flattening
-- [x] Simplification (Says simplified but doesn't appear to actually)
+- [x] Simplification
 - [ ] Customizable identifier renaming
     - [ ] Different scope levels
     - [ ] Different name types
