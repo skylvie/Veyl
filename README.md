@@ -168,7 +168,6 @@ chmod +x ./run.sh
 ## TODO
 - [ ] Fake sourcemap generation
 - [ ] Deadcode injection
-- [ ] `Commander` over Diy CLI parser
 
 ## Formatting and Linting
 Veyl uses [Biome](https://biomejs.dev/) for formatting, import organization, and linting.
@@ -207,7 +206,7 @@ Once the literals have been replaced, Veyl injects the runtime helper functions 
 The code includes the required elements:
 - Input from a file: `obfuscateFile` receives the `-i` path and esbuild reads that entry file.
 - Output: `obfuscateFile` writes the `-o` file and the CLI prints status text.
-- List: `OPTION_DEFINITIONS` stores the supported CLI options in one list.
-- Student-developed procedure: `parseCliArgs(argv)` has a parameter, return type, sequencing, selection, and iteration.
-- Procedure call: `src/cli.ts` calls `parseCliArgs(process.argv.slice(2))`.
-- The same list is used by both `parseCliArgs` and `buildHelpText`, which makes option changes easier to maintain.
+- Command interface: `buildCliProgram(versionText)` defines the Commander-based CLI, including required input/output arguments and config overrides.
+- Student-developed procedure: `buildConfigOverrides(parsed)` converts parsed CLI values into `ObfuscationConfigInput` overrides through sequencing and selection.
+- Procedure call: `packages/cli/src/cli.ts` builds the command, parses `process.argv.slice(2)`, resolves config, and then calls `obfuscateFile(...)`.
+- Validation: Commander argument parsers such as `parseBoolean`, `parseNumberOrRandomized`, and `parseLogLevel` enforce allowed CLI values before execution continues.

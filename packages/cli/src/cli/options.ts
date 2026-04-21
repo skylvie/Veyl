@@ -1,73 +1,8 @@
 import path from "node:path";
 import type { LogLevel, NumberObfuscationOperator } from "@skylvi/veyl";
-import { mergeConfig } from "@skylvi/veyl";
+import { DEFAULT_CONFIG_FILE, mergeConfig } from "@skylvi/veyl";
+import { Command, InvalidArgumentError, Option } from "commander";
 import type { CliOptions } from "../types/cli.js";
-import { color } from "../utils/color.js";
-import { OPTION_DEFINITIONS } from "./definitions.js";
-
-export function parseCliArgs(argv: string[]): CliOptions {
-    const options: CliOptions = {
-        input: "",
-        output: "",
-        configFile: null,
-        configOverrides: {},
-        help: false,
-        version: false,
-    };
-
-    for (let i = 0; i < argv.length; i++) {
-        const parsedToken = splitOptionToken(argv[i]);
-        const definition = OPTION_DEFINITIONS.find((item) => item.flags.includes(parsedToken.flag));
-
-        if (definition === undefined) {
-            throw new Error(`Unknown option: ${parsedToken.flag}`);
-        }
-
-        if (!definition.takesValue) {
-            if (parsedToken.value !== undefined) {
-                throw new Error(`${parsedToken.flag} does not take a value`);
-            }
-
-            if (definition.target === "help") {
-                options.help = true;
-            }
-
-            if (definition.target === "version") {
-                options.version = true;
-            }
-
-            continue;
-        }
-
-        const value = parsedToken.value ?? argv[i + 1];
-
-        if (value === undefined || (parsedToken.value === undefined && value.startsWith("-"))) {
-            throw new Error(`Missing value for ${definition.flags[0]}`);
-        }
-
-        assignCliValue(options, definition.target, value);
-
-        if (parsedToken.value === undefined) {
-            i++;
-        }
-    }
-
-    if (options.help || options.version) {
-        return options;
-    }
-
-    if (options.input === "" && options.output === "") {
-        throw new Error("Missing input and output. Run `veyl -h` for help.");
-    }
-
-    for (const definition of OPTION_DEFINITIONS) {
-        if (definition.required && isMissingRequiredOption(options, definition.target)) {
-            throw new Error(`Missing required option: ${definition.flags[0]}`);
-        }
-    }
-
-    return options;
-}
 
 export function resolveCliPaths(options: CliOptions, cwd: string): CliOptions {
     return {
@@ -78,154 +13,210 @@ export function resolveCliPaths(options: CliOptions, cwd: string): CliOptions {
     };
 }
 
-export function buildHelpText(commandName: string): string {
-    const lines = [
-        `${color.bold("Usage:")} ${color.cyan(commandName)} -i ./input.ts -o ./output.js`,
-        "",
-        color.bold("Options:"),
-    ];
+export function buildCliProgram(versionText: string): Command {
+    const program = new Command();
 
-    for (const option of OPTION_DEFINITIONS) {
-        const flagText = color.green((option.helpFlags ?? option.flags).join(", "));
-        const valueText =
-            option.valueName === undefined ? "" : color.gray(` <${option.valueName}>`);
+    program
+        .name("veyl")
+        .description("Bundle and obfuscate a TypeScript or JavaScript entry file.")
+        .requiredOption("-i, --input <path>", "Input TS or JS file to bundle and obfuscate.")
+        .requiredOption("-o, --output <path>", "Output JS file to write.")
+        .option(
+            "-c, --config <path>",
+            `Config JSON file. Defaults to ./${DEFAULT_CONFIG_FILE} when present.`
+        )
+        .addOption(
+            new Option(
+                "--obfuscated-strings, --obfuscated_strings <true|false>",
+                "Enable or disable string literal obfuscation."
+            ).argParser((value: string) => parseBoolean(value, "--obfuscated-strings"))
+        )
+        .addOption(
+            new Option(
+                "--obfuscated-numbers, --obfuscated_numbers <true|false>",
+                "Enable or disable number literal obfuscation."
+            ).argParser((value: string) => parseBoolean(value, "--obfuscated-numbers"))
+        )
+        .addOption(
+            new Option(
+                "--obfuscated-booleans, --obfuscated_booleans <true|false>",
+                "Enable or disable boolean literal obfuscation."
+            ).argParser((value: string) => parseBoolean(value, "--obfuscated-booleans"))
+        )
+        .addOption(
+            new Option(
+                "--randomized-unique-identifiers, --randomized_unique_identifiers <true|false>",
+                "Use Veyl randomized names instead of esbuild minified identifiers."
+            ).argParser((value: string) => parseBoolean(value, "--randomized-unique-identifiers"))
+        )
+        .addOption(
+            new Option(
+                "--minify <true|false>",
+                "Enable or disable the final esbuild minify step."
+            ).argParser((value: string) => parseBoolean(value, "--minify"))
+        )
+        .addOption(
+            new Option(
+                "--functionify <true|false>",
+                "Wrap the transformed program body in a runtime `new Function(...)` call."
+            ).argParser((value: string) => parseBoolean(value, "--functionify"))
+        )
+        .addOption(
+            new Option(
+                "--number-obfuscation-offset, --number_obfuscation_offset <num|randomized>",
+                "Number offset for numeric literal obfuscation."
+            ).argParser((value: string) =>
+                parseNumberOrRandomized(value, "--number-obfuscation-offset")
+            )
+        )
+        .addOption(
+            new Option(
+                "--number-obfuscation-operator, --number_obfuscation_operator <+|-|*|/|randomized>",
+                "Number operator for numeric literal obfuscation."
+            ).argParser((value: string) =>
+                parseNumberOperator(value, "--number-obfuscation-operator")
+            )
+        )
+        .addOption(
+            new Option(
+                "--boolean-obfuscation-number, --boolean_obfuscation_number <num|randomized>",
+                "Numeric token used for obfuscated true values."
+            ).argParser((value: string) =>
+                parseNumberOrRandomized(value, "--boolean-obfuscation-number")
+            )
+        )
+        .addOption(
+            new Option(
+                "--unnecessary-depth, --unnecessary_depth <true|false>",
+                "Enable or disable unnecessary depth references."
+            ).argParser((value: string) => parseBoolean(value, "--unnecessary-depth"))
+        )
+        .addOption(
+            new Option(
+                "--log-level, --log_level <none|error|info|debug>",
+                "Control CLI output verbosity."
+            ).argParser((value: string) => parseLogLevel(value, "--log-level"))
+        )
+        .version(versionText, "-v, --version", "Show project info, credits, and version.")
+        .exitOverride();
 
-        lines.push(`  ${flagText}${valueText}  ${option.description}`);
-    }
-
-    return lines.join("\n");
+    return program;
 }
 
-export function readLogLevelFlag(argv: string[]): LogLevel | null {
-    for (let i = 0; i < argv.length; i++) {
-        const parsedToken = splitOptionToken(argv[i]);
-
-        if (parsedToken.flag !== "--log-level" && parsedToken.flag !== "--log_level") {
-            continue;
-        }
-
-        const value = parsedToken.value ?? argv[i + 1];
-
-        if (value === undefined) {
-            return null;
-        }
-
-        return parseLogLevel(value, "--log-level");
-    }
-
-    return null;
-}
-
-function splitOptionToken(token: string): { flag: string; value?: string } {
-    const separatorIndex = token.indexOf("=");
-
-    if (separatorIndex === -1) {
-        return {
-            flag: token,
-        };
-    }
+export function parseCliArgs(program: Command, argv: string[]): CliOptions {
+    program.parse(argv, { from: "user" });
+    const parsed = program.opts<CommanderCliOptions>();
 
     return {
-        flag: token.slice(0, separatorIndex),
-        value: token.slice(separatorIndex + 1),
+        input: parsed.input,
+        output: parsed.output,
+        configFile: parsed.config ?? null,
+        configOverrides: buildConfigOverrides(parsed),
     };
 }
 
-function assignCliValue(options: CliOptions, target: string, value: string): void {
-    switch (target) {
-        case "input":
-            options.input = value;
-            return;
-        case "output":
-            options.output = value;
-            return;
-        case "configFile":
-            options.configFile = value;
-            return;
-        case "obfuscatedStrings":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                features: { obfuscate: { strings: parseBoolean(value, "--obfuscated-strings") } },
-            });
-            return;
-        case "obfuscatedNumbers":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                features: { obfuscate: { numbers: parseBoolean(value, "--obfuscated-numbers") } },
-            });
-            return;
-        case "obfuscatedBooleans":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                features: { obfuscate: { booleans: parseBoolean(value, "--obfuscated-booleans") } },
-            });
-            return;
-        case "randomizedUniqueIdentifiers":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                features: {
-                    randomized_unique_identifiers: parseBoolean(
-                        value,
-                        "--randomized-unique-identifiers"
-                    ),
-                },
-            });
-            return;
-        case "minify":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                options: {
-                    minify: parseBoolean(value, "--minify"),
-                },
-            });
-            return;
-        case "functionify":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                features: {
-                    functionify: parseBoolean(value, "--functionify"),
-                },
-            });
-            return;
-        case "numberObfuscationOffset":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                options: {
-                    number_offset: parseNumberOrRandomized(value, "--number-obfuscation-offset"),
-                },
-            });
-            return;
-        case "numberObfuscationOperator":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                options: {
-                    number_operator: parseNumberOperator(value, "--number-obfuscation-operator"),
-                },
-            });
-            return;
-        case "booleanObfuscationNumber":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                options: {
-                    boolean_number: parseNumberOrRandomized(value, "--boolean-obfuscation-number"),
-                },
-            });
-            return;
-        case "unnecessaryDepth":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                features: { unnecessary_depth: parseBoolean(value, "--unnecessary-depth") },
-            });
-            return;
-        case "logLevel":
-            options.configOverrides = mergeConfig(options.configOverrides, {
-                log_level: parseLogLevel(value, "--log-level"),
-            });
-            return;
-        default:
-            throw new Error(`Unsupported option target: ${target}`);
+export function readLogLevelFlag(argv: string[]): LogLevel | null {
+    const program = new Command()
+        .allowUnknownOption(true)
+        .exitOverride()
+        .addOption(
+            new Option("--log-level, --log_level <none|error|info|debug>").argParser(
+                (value: string) => parseLogLevel(value, "--log-level")
+            )
+        );
+
+    try {
+        program.parse(argv, { from: "user" });
+        return program.opts<{ logLevel?: LogLevel }>().logLevel ?? null;
+    } catch {
+        return null;
     }
 }
 
-function isMissingRequiredOption(options: CliOptions, target: string): boolean {
-    switch (target) {
-        case "input":
-            return options.input === "";
-        case "output":
-            return options.output === "";
-        default:
-            return false;
+function buildConfigOverrides(parsed: CommanderCliOptions) {
+    let configOverrides = {};
+
+    if (parsed.obfuscatedStrings !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: { obfuscate: { strings: parsed.obfuscatedStrings } },
+        });
     }
+
+    if (parsed.obfuscatedNumbers !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: { obfuscate: { numbers: parsed.obfuscatedNumbers } },
+        });
+    }
+
+    if (parsed.obfuscatedBooleans !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: { obfuscate: { booleans: parsed.obfuscatedBooleans } },
+        });
+    }
+
+    if (parsed.randomizedUniqueIdentifiers !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                randomized_unique_identifiers: parsed.randomizedUniqueIdentifiers,
+            },
+        });
+    }
+
+    if (parsed.minify !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                minify: parsed.minify,
+            },
+        });
+    }
+
+    if (parsed.functionify !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                functionify: parsed.functionify,
+            },
+        });
+    }
+
+    if (parsed.numberObfuscationOffset !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                number_offset: parsed.numberObfuscationOffset,
+            },
+        });
+    }
+
+    if (parsed.numberObfuscationOperator !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                number_operator: parsed.numberObfuscationOperator,
+            },
+        });
+    }
+
+    if (parsed.booleanObfuscationNumber !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                boolean_number: parsed.booleanObfuscationNumber,
+            },
+        });
+    }
+
+    if (parsed.unnecessaryDepth !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                unnecessary_depth: parsed.unnecessaryDepth,
+            },
+        });
+    }
+
+    if (parsed.logLevel !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            log_level: parsed.logLevel,
+        });
+    }
+
+    return configOverrides;
 }
 
 function parseBoolean(value: string, flag: string): boolean {
@@ -237,7 +228,7 @@ function parseBoolean(value: string, flag: string): boolean {
         return false;
     }
 
-    throw new Error(`${flag} must be true or false`);
+    throw new InvalidArgumentError(`${flag} must be true or false`);
 }
 
 function parseNumberOrRandomized(value: string, flag: string): number | null {
@@ -248,7 +239,7 @@ function parseNumberOrRandomized(value: string, flag: string): number | null {
     const parsed = Number(value);
 
     if (!Number.isFinite(parsed)) {
-        throw new Error(`${flag} must be a finite number or randomized`);
+        throw new InvalidArgumentError(`${flag} must be a finite number or randomized`);
     }
 
     return parsed;
@@ -263,7 +254,7 @@ function parseNumberOperator(value: string, flag: string): NumberObfuscationOper
         return value;
     }
 
-    throw new Error(`${flag} must be one of +, -, *, /, or randomized`);
+    throw new InvalidArgumentError(`${flag} must be one of +, -, *, /, or randomized`);
 }
 
 function parseLogLevel(value: string, flag: string): LogLevel {
@@ -271,5 +262,22 @@ function parseLogLevel(value: string, flag: string): LogLevel {
         return value;
     }
 
-    throw new Error(`${flag} must be one of none, error, info, or debug`);
+    throw new InvalidArgumentError(`${flag} must be one of none, error, info, or debug`);
+}
+
+interface CommanderCliOptions {
+    input: string;
+    output: string;
+    config?: string;
+    obfuscatedStrings?: boolean;
+    obfuscatedNumbers?: boolean;
+    obfuscatedBooleans?: boolean;
+    randomizedUniqueIdentifiers?: boolean;
+    minify?: boolean;
+    functionify?: boolean;
+    numberObfuscationOffset?: number | null;
+    numberObfuscationOperator?: NumberObfuscationOperator | null;
+    booleanObfuscationNumber?: number | null;
+    unnecessaryDepth?: boolean;
+    logLevel?: LogLevel;
 }
