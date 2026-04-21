@@ -21,6 +21,8 @@ export interface ObfuscationConfig {
         randomized_unique_identifiers: boolean;
         /** Add extra local references before direct calls/constructors when true. */
         unnecessary_depth: boolean;
+        /** Insert unreachable decoy blocks throughout the transformed program when true. */
+        dead_code_injection: boolean;
         /** Wrap the transformed program body in `new Function(...)` when true. */
         functionify: boolean;
     };
@@ -52,6 +54,7 @@ export type ObfuscationConfigInput = Partial<{
         }>;
         randomized_unique_identifiers: boolean;
         unnecessary_depth: boolean;
+        dead_code_injection: boolean;
         functionify: boolean;
     }>;
     options: Partial<{

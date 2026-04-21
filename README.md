@@ -45,6 +45,7 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 		},
 		"randomized_unique_identifiers": true, // Randomize identifiers (e.g. `_0x1a2b3c`)
 		"unnecessary_depth": true, // Add "unnecessary" depth (explained in "How It Works" section)
+		"dead_code_injection": false, // Insert unreachable decoy code blocks
 		"functionify": false // Run the final program body through `new Function(...)`
 	},
 	"options": { // Leave these as "randomized" or `null` to use random values
@@ -71,6 +72,7 @@ You can also use CLI flags instead:
 --randomized-unique-identifiers=true|false
 --minify=true|false
 --functionify=true|false
+--dead-code-injection=true|false
 --number-obfuscation-offset=<num|randomized>
 --number-obfuscation-operator=<+|-|*|/|randomized>
 --boolean-obfuscation-number=<num|randomized>
@@ -107,7 +109,9 @@ const stats = await obfuscateFile({
                 booleans: true,
             },
             randomized_unique_identifiers: true,
-            unnecessary_depth: true,
+            unnecessary_depth: false,
+            functionify: false,
+            dead_code_injection: false,
         },
         options: {
             minify: true,
@@ -195,6 +199,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Local bindings are renamed to randomized names like `_0x1a2b3c`.
 - Local object and class property names are renamed, including matching local member accesses.
 - Direct function calls and class constructor calls gain an extra randomized `const` reference before invocation.
+- Dead code injection can insert unreachable decoy control flow and computations so the transformed program looks busier than the logic it actually executes.
 - String literals are moved into a randomized string table. Each stored string is encoded with base64, bit rotation, and XOR, then decoded at runtime by injected helper functions.
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.

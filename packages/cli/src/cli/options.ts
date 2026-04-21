@@ -63,6 +63,12 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--dead-code-injection, --dead_code_injection <true|false>",
+                "Insert unreachable decoy code blocks throughout the transformed program."
+            ).argParser((value: string) => parseBoolean(value, "--dead-code-injection"))
+        )
+        .addOption(
+            new Option(
                 "--number-obfuscation-offset, --number_obfuscation_offset <num|randomized>",
                 "Number offset for numeric literal obfuscation."
             ).argParser((value: string) =>
@@ -144,30 +150,78 @@ export function readLogLevelFlag(argv: string[]): LogLevel | null {
 }
 
 function buildConfigOverrides(parsed: CommanderCliOptions) {
+    const obfuscatedStrings = readAliasedOption(
+        parsed,
+        "obfuscatedStrings",
+        "obfuscated_strings"
+    ) as boolean | undefined;
+    const obfuscatedNumbers = readAliasedOption(
+        parsed,
+        "obfuscatedNumbers",
+        "obfuscated_numbers"
+    ) as boolean | undefined;
+    const obfuscatedBooleans = readAliasedOption(
+        parsed,
+        "obfuscatedBooleans",
+        "obfuscated_booleans"
+    ) as boolean | undefined;
+    const randomizedUniqueIdentifiers = readAliasedOption(
+        parsed,
+        "randomizedUniqueIdentifiers",
+        "randomized_unique_identifiers"
+    ) as boolean | undefined;
+    const deadCodeInjection = readAliasedOption(
+        parsed,
+        "deadCodeInjection",
+        "dead_code_injection"
+    ) as boolean | undefined;
+    const numberObfuscationOffset = readAliasedOption(
+        parsed,
+        "numberObfuscationOffset",
+        "number_obfuscation_offset"
+    ) as number | null | undefined;
+    const numberObfuscationOperator = readAliasedOption(
+        parsed,
+        "numberObfuscationOperator",
+        "number_obfuscation_operator"
+    ) as NumberObfuscationOperator | null | undefined;
+    const booleanObfuscationNumber = readAliasedOption(
+        parsed,
+        "booleanObfuscationNumber",
+        "boolean_obfuscation_number"
+    ) as number | null | undefined;
+    const unnecessaryDepth = readAliasedOption(
+        parsed,
+        "unnecessaryDepth",
+        "unnecessary_depth"
+    ) as boolean | undefined;
+    const logLevel = readAliasedOption(parsed, "logLevel", "log_level") as
+        | LogLevel
+        | undefined;
     let configOverrides = {};
 
-    if (parsed.obfuscatedStrings !== undefined) {
+    if (obfuscatedStrings !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            features: { obfuscate: { strings: parsed.obfuscatedStrings } },
+            features: { obfuscate: { strings: obfuscatedStrings } },
         });
     }
 
-    if (parsed.obfuscatedNumbers !== undefined) {
+    if (obfuscatedNumbers !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            features: { obfuscate: { numbers: parsed.obfuscatedNumbers } },
+            features: { obfuscate: { numbers: obfuscatedNumbers } },
         });
     }
 
-    if (parsed.obfuscatedBooleans !== undefined) {
+    if (obfuscatedBooleans !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            features: { obfuscate: { booleans: parsed.obfuscatedBooleans } },
+            features: { obfuscate: { booleans: obfuscatedBooleans } },
         });
     }
 
-    if (parsed.randomizedUniqueIdentifiers !== undefined) {
+    if (randomizedUniqueIdentifiers !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
             features: {
-                randomized_unique_identifiers: parsed.randomizedUniqueIdentifiers,
+                randomized_unique_identifiers: randomizedUniqueIdentifiers,
             },
         });
     }
@@ -188,45 +242,68 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         });
     }
 
-    if (parsed.numberObfuscationOffset !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                number_offset: parsed.numberObfuscationOffset,
-            },
-        });
-    }
-
-    if (parsed.numberObfuscationOperator !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                number_operator: parsed.numberObfuscationOperator,
-            },
-        });
-    }
-
-    if (parsed.booleanObfuscationNumber !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                boolean_number: parsed.booleanObfuscationNumber,
-            },
-        });
-    }
-
-    if (parsed.unnecessaryDepth !== undefined) {
+    if (deadCodeInjection !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
             features: {
-                unnecessary_depth: parsed.unnecessaryDepth,
+                dead_code_injection: deadCodeInjection,
             },
         });
     }
 
-    if (parsed.logLevel !== undefined) {
+    if (numberObfuscationOffset !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            log_level: parsed.logLevel,
+            options: {
+                number_offset: numberObfuscationOffset,
+            },
+        });
+    }
+
+    if (numberObfuscationOperator !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                number_operator: numberObfuscationOperator,
+            },
+        });
+    }
+
+    if (booleanObfuscationNumber !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                boolean_number: booleanObfuscationNumber,
+            },
+        });
+    }
+
+    if (unnecessaryDepth !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                unnecessary_depth: unnecessaryDepth,
+            },
+        });
+    }
+
+    if (logLevel !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            log_level: logLevel,
         });
     }
 
     return configOverrides;
+}
+
+function readAliasedOption(
+    parsed: CommanderCliOptions,
+    camelCaseKey: keyof CommanderCliOptions,
+    snakeCaseKey: string
+): unknown {
+    const parsedRecord = parsed as unknown as Record<string, unknown>;
+    const camelCaseValue = parsedRecord[camelCaseKey as string];
+
+    if (camelCaseValue !== undefined) {
+        return camelCaseValue;
+    }
+
+    return parsedRecord[snakeCaseKey];
 }
 
 function parseBoolean(value: string, flag: string): boolean {
@@ -285,6 +362,7 @@ interface CommanderCliOptions {
     randomizedUniqueIdentifiers?: boolean;
     minify?: boolean;
     functionify?: boolean;
+    deadCodeInjection?: boolean;
     numberObfuscationOffset?: number | null;
     numberObfuscationOperator?: NumberObfuscationOperator | null;
     booleanObfuscationNumber?: number | null;

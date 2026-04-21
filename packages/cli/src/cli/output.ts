@@ -27,6 +27,7 @@ export function printStats(
     logger.debug(`  bindings:   ${stats.renamedBindings} renamed\n`);
     logger.debug(`  properties: ${stats.renamedProperties} renamed\n`);
     logger.debug(`  depth refs: ${stats.addedDepthReferences} added\n`);
+    logger.debug(`  dead code:  ${stats.addedDeadCodeBlocks} blocks\n`);
     logger.debug(
         `  literals:   ${totalLiterals} obfuscated ` +
             color.gray(
@@ -57,6 +58,9 @@ function printConfigSummary(
     );
     logger.debug(
         `  unnecessary depth:              ${formatBoolean(config.features.unnecessary_depth)}\n`
+    );
+    logger.debug(
+        `  dead code injection:            ${formatBoolean(config.features.dead_code_injection)}\n`
     );
     logger.debug(
         `  boolean obfuscation number:     ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n`
