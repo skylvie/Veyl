@@ -12,8 +12,6 @@
         "typeRoots": [
             "./node_modules/@types"
         ],
-        "declaration": true,
-        "declarationMap": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true
     }
