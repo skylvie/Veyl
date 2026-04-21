@@ -169,10 +169,6 @@ chmod +x ./run.sh
 ./run.sh --rm-js # Remove JS files
 ```
 
-## TODO
-- [ ] Fake sourcemap generation
-- [ ] Deadcode injection
-
 ## Formatting and Linting
 Veyl uses [Biome](https://biomejs.dev/) for formatting, import organization, and linting.
 
@@ -215,3 +211,6 @@ The code includes the required elements:
 - Student-developed procedure: `buildConfigOverrides(parsed)` converts parsed CLI values into `ObfuscationConfigInput` overrides through sequencing and selection.
 - Procedure call: `packages/cli/src/cli.ts` builds the command, parses `process.argv.slice(2)`, resolves config, and then calls `obfuscateFile(...)`.
 - Validation: Commander argument parsers such as `parseBoolean`, `parseNumberOrRandomized`, and `parseLogLevel` enforce allowed CLI values before execution continues.
+
+## What Else Can I Do to Make Reverse Engineering My Project Harder?
+[Source maps](https://web.dev/articles/source-maps) exist to make debugging easier. If you want another layer of friction, you can generate fake source maps to mislead people inspecting your build output. A project like [fake-source-map](https://github.com/altwine/fake-source-map) can help with that.
