@@ -38,6 +38,8 @@ export interface ObfuscationStats {
     addedDeadCodeBlocks: number;
     /** Number of statement sequences rewritten as flattened dispatcher blocks. */
     flattenedControlFlowBlocks: number;
+    /** Number of source statements rewritten by the simplifier pass. */
+    simplifiedStatements: number;
     /** Number of string literals obfuscated. */
     obfuscatedStrings: number;
     /** Number of number literals obfuscated. */
@@ -68,6 +70,8 @@ export interface ObfuscateCodeResult {
     addedDeadCodeBlocks: number;
     /** Number of statement sequences rewritten as flattened dispatcher blocks. */
     flattenedControlFlowBlocks: number;
+    /** Number of source statements rewritten by the simplifier pass. */
+    simplifiedStatements: number;
     /** Number of string literals obfuscated. */
     obfuscatedStrings: number;
     /** Number of number literals obfuscated. */

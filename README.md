@@ -47,6 +47,7 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 		"unnecessary_depth": true, // Add "unnecessary" depth (explained in "How It Works" section)
 		"dead_code_injection": false, // Insert unreachable decoy code blocks
 		"control_flow_flattening": false, // Flatten eligible statement runs into a state machine
+		"simplify": false, // Apply compacting rewrites such as merged declarations and conditional returns
 		"functionify": false // Run the final program body through `new Function(...)`
 	},
 	"options": { // Leave these as "randomized" or `null` to use random values
@@ -75,6 +76,7 @@ You can also use CLI flags instead:
 --functionify=true|false
 --dead-code-injection=true|false
 --control-flow-flattening=true|false
+--simplify=true|false
 --number-obfuscation-offset=<num|randomized>
 --number-obfuscation-operator=<+|-|*|/|randomized>
 --boolean-obfuscation-number=<num|randomized>
@@ -115,6 +117,7 @@ const stats = await obfuscateFile({
             functionify: false,
             dead_code_injection: false,
             control_flow_flattening: false,
+            simplify: false,
         },
         options: {
             minify: true,
@@ -157,10 +160,11 @@ console.log(result.code);
 
 ## TODO
 ### Core Obfuscation Features
+- [ ] Object props don't get obfuscated? (e.g. `const obj = { a: "b" }; console.log(obj.a);`)
 - [ ] Split (`"" + ""`) string option for string obfuscation
 - [ ] Expression option (`1*2/4+4-5`) for number obfuscation
 - [x] Control flow flattening
-- [ ] Simplification
+- [x] Simplification (Says simplified but doesn't appear to actually)
 - [ ] Customizable identifier renaming
     - [ ] Different scope levels
     - [ ] Different name types
@@ -181,6 +185,7 @@ console.log(result.code);
 - [ ] Webapp Demo
 - [ ] Seperate config parser into seperate package
 - [ ] Anti debug gets its own package
+- [ ] Update test suite
 
 ## Testing
 Make sure you're cloned into the repo first (and have ran `pnpm i`) first! Additionally, the test script only supports UNIX based shells, so no Windows nonsense.
@@ -227,6 +232,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Direct function calls and class constructor calls gain an extra randomized `const` reference before invocation.
 - Dead code injection can insert unreachable decoy control flow and computations so the transformed program looks busier than the logic it actually executes.
 - Control flow flattening can rewrite eligible straight-line statement runs into a randomized dispatcher loop so the original execution order is hidden behind a state machine.
+- Simplify can merge declarations and expression chains, compact `if/else` returns into conditional expressions, and fold expression tails into comma-expression returns.
 - String literals are moved into a randomized string table. Each stored string is encoded with base64, bit rotation, and XOR, then decoded at runtime by injected helper functions.
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.

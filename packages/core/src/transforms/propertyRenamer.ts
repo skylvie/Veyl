@@ -20,20 +20,6 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
     const localClassInstanceBindings = new Set<string>();
 
     traverse(ast, {
-        "ObjectProperty|ObjectMethod|ClassProperty|ClassMethod|ClassAccessorProperty"(
-            pathNode: PropertyPath
-        ) {
-            if (pathNode.node.computed || shouldSkipPropertyRename(pathNode)) {
-                return;
-            }
-
-            const name = staticKeyName(pathNode.node.key);
-
-            if (name !== null && !propMap.has(name)) {
-                propMap.set(name, names.freshIdentifier());
-            }
-        },
-
         VariableDeclarator(pathNode: VariableDeclaratorPath) {
             if (
                 pathNode.node.id.type === "Identifier" &&
@@ -82,7 +68,53 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
         "ObjectProperty|ObjectMethod|ClassProperty|ClassMethod|ClassAccessorProperty"(
             pathNode: PropertyPath
         ) {
-            if (pathNode.node.computed || shouldSkipPropertyRename(pathNode)) {
+            if (
+                pathNode.node.computed ||
+                shouldSkipPropertyRename(pathNode) ||
+                !isRenamablePropertyDeclaration(pathNode, localObjBindings, localClassBindings)
+            ) {
+                return;
+            }
+
+            const name = staticKeyName(pathNode.node.key);
+
+            if (name !== null && !propMap.has(name)) {
+                propMap.set(name, names.freshIdentifier());
+            }
+        },
+
+        "MemberExpression|OptionalMemberExpression"(pathNode: MemberExpressionPath) {
+            if (pathNode.node.computed || pathNode.node.property.type !== "Identifier") {
+                return;
+            }
+
+            if (
+                !isLocalPropertyAccess(
+                    pathNode.node.object,
+                    localObjBindings,
+                    localClassInstanceBindings
+                )
+            ) {
+                return;
+            }
+
+            const name = pathNode.node.property.name;
+
+            if (typeof name === "string" && !propMap.has(name)) {
+                propMap.set(name, names.freshIdentifier());
+            }
+        },
+    });
+
+    traverse(ast, {
+        "ObjectProperty|ObjectMethod|ClassProperty|ClassMethod|ClassAccessorProperty"(
+            pathNode: PropertyPath
+        ) {
+            if (
+                pathNode.node.computed ||
+                shouldSkipPropertyRename(pathNode) ||
+                !isRenamablePropertyDeclaration(pathNode, localObjBindings, localClassBindings)
+            ) {
                 return;
             }
 
@@ -157,6 +189,42 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
     return {
         renamedProperties: propMap.size,
     };
+}
+
+function isRenamablePropertyDeclaration(
+    pathNode: PropertyPath,
+    localObjBindings: Set<string>,
+    localClassBindings: Set<string>
+): boolean {
+    const parentType = pathNode.parentPath?.parent?.type;
+
+    if (parentType === "VariableDeclarator") {
+        const declarator = pathNode.parentPath?.parent as unknown as {
+            id?: BabelNode;
+            init?: BabelNode | null;
+        };
+
+        return (
+            declarator.id?.type === "Identifier" &&
+            typeof declarator.id.name === "string" &&
+            localObjBindings.has(declarator.id.name) &&
+            declarator.init?.type === "ObjectExpression"
+        );
+    }
+
+    if (parentType === "ClassDeclaration" || parentType === "ClassExpression") {
+        const classNode = pathNode.parentPath?.parent as unknown as {
+            id?: BabelNode | null;
+        };
+
+        return (
+            classNode.id?.type === "Identifier" &&
+            typeof classNode.id.name === "string" &&
+            localClassBindings.has(classNode.id.name)
+        );
+    }
+
+    return false;
 }
 
 function isLocalPropertyAccess(

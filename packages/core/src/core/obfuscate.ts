@@ -11,6 +11,7 @@ import { injectDeadCode } from "../transforms/deadCodeInjector.js";
 import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";
+import { simplifyStatements } from "../transforms/simplifier.js";
 import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
 import type { ObfuscationConfigInput } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
@@ -49,6 +50,7 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
         addedDepthReferences: transformed.addedDepthReferences,
         addedDeadCodeBlocks: transformed.addedDeadCodeBlocks,
         flattenedControlFlowBlocks: transformed.flattenedControlFlowBlocks,
+        simplifiedStatements: transformed.simplifiedStatements,
         obfuscatedStrings: transformed.obfuscatedStrings,
         obfuscatedNumbers: transformed.obfuscatedNumbers,
         obfuscatedBooleans: transformed.obfuscatedBooleans,
@@ -85,6 +87,9 @@ export function obfuscateCode(
     const propertyResult = config.features.randomized_unique_identifiers
         ? renameProperties(ast, names)
         : { renamedProperties: 0 };
+    const simplifyResult = config.features.simplify
+        ? simplifyStatements(ast)
+        : { simplifiedStatements: 0 };
     const depthResult = config.features.unnecessary_depth
         ? addUnnecessaryDepth(ast, names)
         : { addedReferences: 0 };
@@ -119,6 +124,7 @@ export function obfuscateCode(
         addedDepthReferences: depthResult.addedReferences,
         addedDeadCodeBlocks: deadCodeResult.addedBlocks,
         flattenedControlFlowBlocks: controlFlowResult.flattenedBlocks,
+        simplifiedStatements: simplifyResult.simplifiedStatements,
         obfuscatedStrings: literalResult.stringCount,
         obfuscatedNumbers: literalResult.numberCount,
         obfuscatedBooleans: literalResult.booleanCount,

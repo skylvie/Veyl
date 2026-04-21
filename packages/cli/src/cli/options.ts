@@ -75,6 +75,12 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--simplify <true|false>",
+                "Apply compacting rewrites such as merged declarations and conditional returns."
+            ).argParser((value: string) => parseBoolean(value, "--simplify"))
+        )
+        .addOption(
+            new Option(
                 "--number-obfuscation-offset, --number_obfuscation_offset <num|randomized>",
                 "Number offset for numeric literal obfuscation."
             ).argParser((value: string) =>
@@ -186,6 +192,7 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         "controlFlowFlattening",
         "control_flow_flattening"
     ) as boolean | undefined;
+    const simplify = readAliasedOption(parsed, "simplify", "simplify") as boolean | undefined;
     const numberObfuscationOffset = readAliasedOption(
         parsed,
         "numberObfuscationOffset",
@@ -261,6 +268,14 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         configOverrides = mergeConfig(configOverrides, {
             features: {
                 control_flow_flattening: controlFlowFlattening,
+            },
+        });
+    }
+
+    if (simplify !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                simplify,
             },
         });
     }
@@ -379,6 +394,7 @@ interface CommanderCliOptions {
     functionify?: boolean;
     deadCodeInjection?: boolean;
     controlFlowFlattening?: boolean;
+    simplify?: boolean;
     numberObfuscationOffset?: number | null;
     numberObfuscationOperator?: NumberObfuscationOperator | null;
     booleanObfuscationNumber?: number | null;

@@ -25,6 +25,10 @@ export interface ControlFlowFlatteningResult {
     flattenedBlocks: number;
 }
 
+export interface SimplifyResult {
+    simplifiedStatements: number;
+}
+
 export interface CallablePath {
     node: {
         callee: BabelNode;

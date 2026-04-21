@@ -16,6 +16,7 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         unnecessary_depth: false,
         dead_code_injection: false,
         control_flow_flattening: false,
+        simplify: false,
         functionify: false,
     },
     options: {

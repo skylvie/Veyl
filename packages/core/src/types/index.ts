@@ -32,6 +32,7 @@ export type {
     NewExpressionNode,
     PropertyPath,
     PropertyRenameResult,
+    SimplifyResult,
     StatementPath,
     UnnecessaryDepthResult,
     VariableDeclaratorPath,
