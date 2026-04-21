@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import chalk from "chalk";
+import type { LogLevel } from "@skylvi/veyl";
+import { mergeConfig, obfuscateFile, resolveConfig } from "@skylvi/veyl";
 import { loadCliConfig } from "./cli/config.js";
 import { buildHelpText, parseCliArgs, readLogLevelFlag, resolveCliPaths } from "./cli/options.js";
 import { printRunHeader, printStats } from "./cli/output.js";
 import { buildVersionText } from "./cli/projectInfo.js";
-import { mergeConfig, obfuscateFile, resolveConfig } from "./index.js";
-import type { LogLevel } from "./types/config.js";
+import { color } from "./utils/color.js";
 import { createLogger } from "./utils/logger.js";
 
 let activeLogLevel: LogLevel = "info";
@@ -49,6 +49,6 @@ main().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     const logger = createLogger(activeLogLevel);
 
-    logger.error(`${chalk.red("[error]")} ${message}\n`);
+    logger.error(`${color.red("[error]")} ${message}\n`);
     process.exitCode = 1;
 });

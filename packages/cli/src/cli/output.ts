@@ -1,14 +1,13 @@
-import chalk from "chalk";
+import type { NumberObfuscationOperator, ObfuscationConfig, ObfuscationStats } from "@skylvi/veyl";
 import type { CliOptions } from "../types/cli.js";
-import type { NumberObfuscationOperator, ObfuscationConfig } from "../types/config.js";
-import type { ObfuscationStats } from "../types/core.js";
 import type { CliLogger } from "../types/logger.js";
+import { color } from "../utils/color.js";
 
 export function printRunHeader(logger: CliLogger, options: CliOptions, configSource: string): void {
-    logger.debug(`${chalk.gray("input: ")} ${options.input}\n`);
-    logger.debug(`${chalk.gray("output:")} ${options.output}\n`);
-    logger.debug(`${chalk.gray("config:")} ${configSource}\n\n`);
-    logger.info(`${chalk.blue("[run]")} bundling, transforming, and emitting...\n`);
+    logger.debug(`${color.gray("input: ")} ${options.input}\n`);
+    logger.debug(`${color.gray("output:")} ${options.output}\n`);
+    logger.debug(`${color.gray("config:")} ${configSource}\n\n`);
+    logger.info(`${color.blue("[run]")} bundling, transforming, and emitting...\n`);
 }
 
 export function printStats(
@@ -19,10 +18,10 @@ export function printStats(
     const totalLiterals =
         stats.obfuscatedStrings + stats.obfuscatedNumbers + stats.obfuscatedBooleans;
 
-    logger.info(`${chalk.green("[ok]")} wrote ${chalk.bold(stats.output)}\n`);
+    logger.info(`${color.green("[ok]")} wrote ${color.bold(stats.output)}\n`);
     logger.debug("\n");
     printConfigSummary(logger, config, stats);
-    logger.debug(`${chalk.bold("Summary")}\n`);
+    logger.debug(`${color.bold("Summary")}\n`);
     logger.debug(`  bundled:    ${formatKilobytes(stats.bundledBytes)}\n`);
     logger.debug(`  output:     ${formatKilobytes(stats.outputBytes)}\n`);
     logger.debug(`  bindings:   ${stats.renamedBindings} renamed\n`);
@@ -30,7 +29,7 @@ export function printStats(
     logger.debug(`  depth refs: ${stats.addedDepthReferences} added\n`);
     logger.debug(
         `  literals:   ${totalLiterals} obfuscated ` +
-            chalk.gray(
+            color.gray(
                 `(${stats.obfuscatedStrings} strings, ${stats.obfuscatedNumbers} numbers, ${stats.obfuscatedBooleans} booleans)`
             )
     );
@@ -42,7 +41,7 @@ function printConfigSummary(
     config: ObfuscationConfig,
     stats: ObfuscationStats
 ): void {
-    logger.debug(`${chalk.bold("Config")}\n`);
+    logger.debug(`${color.bold("Config")}\n`);
     logger.debug(`  log level:                      ${config.log_level}\n`);
     logger.debug(
         `  obfuscated strings:             ${formatBoolean(config.features.obfuscate.strings)}\n`

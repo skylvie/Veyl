@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import chalk from "chalk";
+import { color } from "../utils/color.js";
 
 interface PackageInfo {
     name: string;
@@ -12,10 +12,10 @@ export function buildVersionText(): string {
     const info = readPackageInfo();
 
     return [
-        `${chalk.cyan.bold(info.name)} ${chalk.gray(info.version)}`,
-        chalk.gray("JavaScript/TypeScript obfuscator"),
-        `${chalk.gray("author:")} ${chalk.green("Sylvie Rain (skylvi)")}`,
-        `${chalk.gray("license:")} ${chalk.green("MIT")}`,
+        `${color.bold(color.cyan(info.name))} ${color.gray(info.version)}`,
+        color.gray("JavaScript/TypeScript obfuscator"),
+        `${color.gray("author:")} ${color.green("Sylvie Rain (skylvi)")}`,
+        `${color.gray("license:")} ${color.green("MIT")}`,
     ].join("\n");
 }
 
