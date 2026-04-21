@@ -228,35 +228,110 @@ export function buildStringRuntimeHelpers(
 export function buildStringTableRuntimeHelpers(
     stringTableName: string,
     stringAccessorName: string,
-    encodedTable: string[][]
+    stringDecoderName: string,
+    encodedTable: string[][],
+    orderTable: number[][],
+    encode: boolean
 ): t.Statement[] {
-    const tableElements = encodedTable.map((chunks) =>
-        t.arrayExpression(chunks.map((value) => t.stringLiteral(value)))
+    const tableElements = encodedTable.map((parts) =>
+        t.arrayExpression(parts.map((value) => t.stringLiteral(value)))
+    );
+    const orderElements = orderTable.map((parts) =>
+        t.arrayExpression(parts.map((value) => t.numericLiteral(value)))
     );
 
     const stringTableDeclaration = t.variableDeclaration("const", [
         t.variableDeclarator(t.identifier(stringTableName), t.arrayExpression(tableElements)),
+    ]);
+    const stringOrderDeclaration = t.variableDeclaration("const", [
+        t.variableDeclarator(
+            t.identifier(`${stringTableName}_o`),
+            t.arrayExpression(orderElements)
+        ),
     ]);
 
     const stringAccessorFn = t.functionDeclaration(
         t.identifier(stringAccessorName),
         [t.identifier("index")],
         t.blockStatement([
+            t.variableDeclaration("const", [
+                t.variableDeclarator(
+                    t.identifier("parts"),
+                    t.memberExpression(t.identifier(stringTableName), t.identifier("index"), true)
+                ),
+            ]),
+            t.variableDeclaration("const", [
+                t.variableDeclarator(
+                    t.identifier("order"),
+                    t.memberExpression(
+                        t.identifier(`${stringTableName}_o`),
+                        t.identifier("index"),
+                        true
+                    )
+                ),
+            ]),
+            t.variableDeclaration("const", [
+                t.variableDeclarator(
+                    t.identifier("restored"),
+                    t.newExpression(t.identifier("Array"), [
+                        t.memberExpression(t.identifier("parts"), t.identifier("length")),
+                    ])
+                ),
+            ]),
+            t.forStatement(
+                t.variableDeclaration("let", [
+                    t.variableDeclarator(t.identifier("i"), t.numericLiteral(0)),
+                ]),
+                t.binaryExpression(
+                    "<",
+                    t.identifier("i"),
+                    t.memberExpression(t.identifier("parts"), t.identifier("length"))
+                ),
+                t.updateExpression("++", t.identifier("i")),
+                t.blockStatement([
+                    t.variableDeclaration("const", [
+                        t.variableDeclarator(
+                            t.identifier("value"),
+                            encode
+                                ? t.callExpression(t.identifier(stringDecoderName), [
+                                      t.memberExpression(
+                                          t.identifier("parts"),
+                                          t.identifier("i"),
+                                          true
+                                      ),
+                                  ])
+                                : t.memberExpression(
+                                      t.identifier("parts"),
+                                      t.identifier("i"),
+                                      true
+                                  )
+                        ),
+                    ]),
+                    t.expressionStatement(
+                        t.assignmentExpression(
+                            "=",
+                            t.memberExpression(
+                                t.identifier("restored"),
+                                t.memberExpression(
+                                    t.identifier("order"),
+                                    t.identifier("i"),
+                                    true
+                                ),
+                                true
+                            ),
+                            t.identifier("value")
+                        )
+                    ),
+                ])
+            ),
             t.returnStatement(
                 t.callExpression(
-                    t.memberExpression(
-                        t.memberExpression(
-                            t.identifier(stringTableName),
-                            t.identifier("index"),
-                            true
-                        ),
-                        t.identifier("join")
-                    ),
-                    [t.stringLiteral("")]
+                    t.memberExpression(t.identifier("restored"), t.identifier("join")),
+                    [t.stringLiteral(" ")]
                 )
             ),
         ])
     );
 
-    return [stringTableDeclaration, stringAccessorFn];
+    return [stringTableDeclaration, stringOrderDeclaration, stringAccessorFn];
 }

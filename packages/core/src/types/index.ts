@@ -9,9 +9,11 @@ export type {
 export type {
     LogLevel,
     NumberObfuscationOperator,
+    NumberObfuscationOperatorFamily,
     ObfuscationConfig,
     ObfuscationConfigInput,
-} from "./config.js";
+    StringObfuscationMethod,
+} from "@skylvi/veyl-config";
 export type {
     BundleResult,
     ObfuscateCodeResult,

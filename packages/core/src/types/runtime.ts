@@ -1,12 +1,14 @@
-import type { NumberObfuscationOperator } from "./config.js";
+import type { NumberObfuscationOperator } from "@skylvi/veyl-config";
 
 export interface RuntimeHelperOptions {
     strings?: {
         method: "array" | "split";
+        encode: boolean;
         decoderName: string;
         tableName?: string;
         accessorName?: string;
         encodedTable?: string[][];
+        orderTable?: number[][];
         xorKey: number;
     };
     numbers?: {

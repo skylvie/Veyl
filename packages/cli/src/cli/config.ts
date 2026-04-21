@@ -1,5 +1,5 @@
 import path from "node:path";
-import { DEFAULT_CONFIG_FILE, loadConfigFile, loadDefaultConfigFile } from "@skylvi/veyl";
+import { DEFAULT_CONFIG_FILE, loadConfigFile, loadDefaultConfigFile } from "@skylvi/veyl-config";
 import type { CliOptions, LoadedConfig } from "../types/cli.js";
 
 export function loadCliConfig(options: CliOptions, cwd: string): LoadedConfig {

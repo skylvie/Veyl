@@ -1,5 +1,5 @@
+import type { NumberObfuscationOperator } from "@skylvi/veyl-config";
 import * as t from "@babel/types";
-import type { NumberObfuscationOperator } from "../../types/config.js";
 
 export function buildNumberRuntimeHelper(
     numberDecoderName: string,
@@ -45,6 +45,8 @@ function decodeNumberOperator(operator: NumberObfuscationOperator): NumberObfusc
         case "/":
             return "*";
     }
+
+    throw new Error(`Unsupported number operator: ${operator}`);
 }
 
 function encodeNumberOperator(operator: NumberObfuscationOperator): number {
@@ -58,4 +60,6 @@ function encodeNumberOperator(operator: NumberObfuscationOperator): number {
         case "/":
             return 3;
     }
+
+    throw new Error(`Unsupported number operator: ${operator}`);
 }

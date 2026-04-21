@@ -5,7 +5,7 @@ export {
     loadDefaultConfigFile,
     mergeConfig,
     resolveConfig,
-} from "./config/index.js";
+} from "@skylvi/veyl-config";
 export {
     obfuscateCode,
     obfuscateFile,
@@ -13,10 +13,11 @@ export {
 export type {
     LogLevel,
     NumberObfuscationOperator,
+    NumberObfuscationOperatorFamily,
     ObfuscationConfig,
     ObfuscationConfigInput,
     StringObfuscationMethod,
-} from "./types/config.js";
+} from "@skylvi/veyl-config";
 export type {
     ObfuscateCodeResult,
     ObfuscateFileOptions,

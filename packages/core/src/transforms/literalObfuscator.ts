@@ -1,5 +1,11 @@
 import crypto from "node:crypto";
 import * as t from "@babel/types";
+import type {
+    NumberObfuscationOperator,
+    NumberObfuscationOperatorFamily,
+    ObfuscationConfig,
+    StringObfuscationMethod,
+} from "@skylvi/veyl-config";
 import { traverse } from "../babel/interop.js";
 import {
     isDirectiveLiteral,
@@ -7,14 +13,9 @@ import {
     isPropertyKeyNode,
 } from "../babel/predicates.js";
 import type { BabelNode, BabelNodePath } from "../types/babel.js";
-import type {
-    NumberObfuscationOperator,
-    ObfuscationConfig,
-    StringObfuscationMethod,
-} from "../types/config.js";
 import type { LiteralObfuscationResult } from "../types/transforms.js";
 import type { NameGenerator } from "../utils/random.js";
-import { encodeStringLiteralValue, randomAsciiString } from "../utils/random.js";
+import { encodeStringLiteralValue } from "../utils/random.js";
 
 const ADDITIVE_NUMBER_SHIFT_MIN = 100_000;
 const ADDITIVE_NUMBER_SHIFT_MAX = 999_999;
@@ -25,6 +26,7 @@ const MULTIPLICATIVE_NUMBER_OPERATORS: readonly NumberObfuscationOperator[] = ["
 
 interface StringTableState {
     encodedTable: string[][];
+    orderTable: number[][];
     availableIndices: number[];
 }
 
@@ -42,11 +44,12 @@ export function obfuscateLiterals(
     let numberOffset: number | null = null;
     const numberOperators = new Set<NumberObfuscationOperator>();
 
-    if (config.features.obfuscate.strings) {
+    if (config.obfuscate.strings.enabled) {
         const stringDecoderName = names.freshIdentifier();
         const stringXorKey = crypto.randomInt(1, 256);
-        const stringMethod = config.options.string_method;
-        const stringSplitLength = config.options.string_split_length;
+        const stringEncode = config.obfuscate.strings.encode;
+        const stringMethod = config.obfuscate.strings.method;
+        const stringSplitLength = config.obfuscate.strings.split_length;
         const stringTableName = stringMethod === "array" ? names.freshIdentifier() : undefined;
         const stringAccessorName =
             stringMethod === "array" ? names.freshIdentifier() : undefined;
@@ -88,9 +91,7 @@ export function obfuscateLiterals(
         const templateStringParts = countTemplateStringParts(templateLiteralPaths);
         const totalStringEntries = stringLiteralPaths.length + templateStringParts;
         const stringTableState =
-            stringMethod === "array"
-                ? createStringTableState(Math.max(totalStringEntries * 2, 1), stringXorKey)
-                : null;
+            stringMethod === "array" ? createStringTableState(totalStringEntries) : null;
 
         for (const literalPath of stringLiteralPaths) {
             const literalValue = literalPath.node?.value;
@@ -106,6 +107,7 @@ export function obfuscateLiterals(
                     stringAccessorName,
                     literalValue,
                     stringXorKey,
+                    stringEncode,
                     stringSplitLength,
                     stringTableState
                 ) as unknown as BabelNode
@@ -123,6 +125,7 @@ export function obfuscateLiterals(
                 stringDecoderName,
                 stringAccessorName,
                 stringXorKey,
+                stringEncode,
                 stringSplitLength,
                 stringTableState
             );
@@ -130,28 +133,31 @@ export function obfuscateLiterals(
             templatePath.replaceWith(replacement as unknown as BabelNode);
         }
 
-        runtimeOptions.strings = {
-            method: stringMethod,
-            decoderName: stringDecoderName,
-            xorKey: stringXorKey,
-        };
-
-        if (stringTableState !== null) {
-            runtimeOptions.strings.tableName = stringTableName;
-            runtimeOptions.strings.accessorName = stringAccessorName;
-            runtimeOptions.strings.encodedTable = stringTableState.encodedTable;
-        }
-
         stringCount = totalStringEntries;
+
+        if (stringCount > 0) {
+            runtimeOptions.strings = {
+                method: stringMethod,
+                decoderName: stringDecoderName,
+                encode: stringEncode,
+                xorKey: stringXorKey,
+            };
+
+            if (stringTableState !== null) {
+                runtimeOptions.strings.tableName = stringTableName;
+                runtimeOptions.strings.accessorName = stringAccessorName;
+                runtimeOptions.strings.encodedTable = stringTableState.encodedTable;
+                runtimeOptions.strings.orderTable = stringTableState.orderTable;
+            }
+        }
     }
 
-    if (config.features.obfuscate.numbers) {
+    if (config.obfuscate.numbers.enabled) {
         const numberDecoderName = names.freshIdentifier();
-        const allowedOperators =
-            config.options.number_operator === null
-                ? pickNumberOperatorFamily()
-                : [config.options.number_operator];
-        numberOffset = config.options.number_offset ?? randomNumberOffset(allowedOperators);
+        const allowedOperators = pickNumberOperators(config.obfuscate.numbers.operator);
+        const resolvedNumberOffset =
+            config.obfuscate.numbers.offset ?? randomNumberOffset(allowedOperators);
+        numberOffset = resolvedNumberOffset;
         const numericLiteralPaths: BabelNodePath[] = [];
 
         traverse(ast, {
@@ -177,7 +183,7 @@ export function obfuscateLiterals(
 
             const numberOp = pickNumberOperator(allowedOperators);
             const opToken = encodeNumberOperator(numberOp);
-            const encoded = encodeNumber(original, numberOp, numberOffset);
+            const encoded = encodeNumber(original, numberOp, resolvedNumberOffset);
 
             numberPath.replaceWith(
                 t.callExpression(t.identifier(numberDecoderName), [
@@ -189,22 +195,22 @@ export function obfuscateLiterals(
             numberCount++;
         }
 
-        runtimeOptions.numbers = {
-            decoderName: numberDecoderName,
-            allowedOperators,
-            offset: numberOffset,
-        };
-
         if (numberCount > 0) {
+            runtimeOptions.numbers = {
+                decoderName: numberDecoderName,
+                allowedOperators,
+                offset: resolvedNumberOffset,
+            };
+
             for (const operator of allowedOperators) {
                 numberOperators.add(operator);
             }
         }
     }
 
-    if (config.features.obfuscate.booleans) {
+    if (config.obfuscate.booleans.enabled) {
         const boolDecoderName = names.freshIdentifier();
-        const trueToken = config.options.boolean_number ?? crypto.randomInt(10000, 99999);
+        const trueToken = config.obfuscate.booleans.number ?? crypto.randomInt(10000, 99999);
         let falseToken = crypto.randomInt(10000, 99999);
 
         booleanNumber = trueToken;
@@ -231,10 +237,12 @@ export function obfuscateLiterals(
             },
         });
 
-        runtimeOptions.booleans = {
-            decoderName: boolDecoderName,
-            trueToken,
-        };
+        if (booleanCount > 0) {
+            runtimeOptions.booleans = {
+                decoderName: boolDecoderName,
+                trueToken,
+            };
+        }
     }
 
     return {
@@ -246,20 +254,6 @@ export function obfuscateLiterals(
         numberOffset,
         numberOperators: [...numberOperators],
     };
-}
-
-function chunkEncodedString(input: string): string[] {
-    if (input.length === 0) {
-        return [""];
-    }
-
-    const chunks: string[] = [];
-
-    for (let i = 0; i < input.length; i += 3) {
-        chunks.push(input.slice(i, i + 3));
-    }
-
-    return chunks;
 }
 
 function countTemplateStringParts(templateLiteralPaths: BabelNodePath[]): number {
@@ -282,6 +276,7 @@ function buildTemplateLiteralReplacement(
     stringDecoderName: string,
     stringAccessorName: string | undefined,
     stringXorKey: number,
+    stringEncode: boolean,
     stringSplitLength: number,
     stringTableState: StringTableState | null
 ): t.Expression {
@@ -292,6 +287,7 @@ function buildTemplateLiteralReplacement(
             stringAccessorName,
             node.quasis[0]?.value.cooked ?? "",
             stringXorKey,
+            stringEncode,
             stringSplitLength,
             stringTableState
         );
@@ -307,6 +303,7 @@ function buildTemplateLiteralReplacement(
                 stringAccessorName,
                 node.quasis[i]?.value.cooked ?? "",
                 stringXorKey,
+                stringEncode,
                 stringSplitLength,
                 stringTableState
             )
@@ -332,6 +329,7 @@ function buildStringObfuscatedExpression(
     stringAccessorName: string | undefined,
     literalValue: string,
     stringXorKey: number,
+    stringEncode: boolean,
     stringSplitLength: number,
     stringTableState: StringTableState | null
 ): t.Expression {
@@ -340,6 +338,7 @@ function buildStringObfuscatedExpression(
             stringDecoderName,
             literalValue,
             stringXorKey,
+            stringEncode,
             stringSplitLength
         );
     }
@@ -352,26 +351,30 @@ function buildStringObfuscatedExpression(
     const tableIndex = stringTableState.availableIndices[pickAt];
 
     stringTableState.availableIndices.splice(pickAt, 1);
-    stringTableState.encodedTable[tableIndex] = chunkEncodedString(
-        encodeStringLiteralValue(literalValue, stringXorKey)
-    );
+    const shuffledParts = shuffleStringParts(splitStringForArrayTable(literalValue));
 
-    return t.callExpression(t.identifier(stringDecoderName), [
-        t.callExpression(t.identifier(stringAccessorName), [t.numericLiteral(tableIndex)]),
-    ]);
+    stringTableState.encodedTable[tableIndex] = shuffledParts.parts.map((part) =>
+        stringEncode ? encodeStringLiteralValue(part, stringXorKey) : part
+    );
+    stringTableState.orderTable[tableIndex] = shuffledParts.order;
+
+    return t.callExpression(t.identifier(stringAccessorName), [t.numericLiteral(tableIndex)]);
 }
 
 function buildSplitStringExpression(
     stringDecoderName: string,
     literalValue: string,
     stringXorKey: number,
+    stringEncode: boolean,
     stringSplitLength: number
 ): t.Expression {
     const literalChunks = splitPlainString(literalValue, stringSplitLength);
     const parts = literalChunks.map((chunk) =>
-        t.callExpression(t.identifier(stringDecoderName), [
-            t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
-        ])
+        stringEncode
+            ? t.callExpression(t.identifier(stringDecoderName), [
+                  t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
+              ])
+            : t.stringLiteral(chunk)
     );
 
     let output: t.Expression = parts[0] ?? t.stringLiteral("");
@@ -383,19 +386,35 @@ function buildSplitStringExpression(
     return output;
 }
 
-function createStringTableState(size: number, stringXorKey: number): StringTableState {
+function createStringTableState(size: number): StringTableState {
     const encodedTable = new Array<string[]>(size);
+    const orderTable = new Array<number[]>(size);
     const availableIndices = Array.from({ length: size }, (_, idx) => idx);
-
-    for (let i = 0; i < encodedTable.length; i++) {
-        encodedTable[i] = chunkEncodedString(
-            encodeStringLiteralValue(randomAsciiString(), stringXorKey)
-        );
-    }
 
     return {
         encodedTable,
+        orderTable,
         availableIndices,
+    };
+}
+
+function splitStringForArrayTable(input: string): string[] {
+    return input.split(" ");
+}
+
+function shuffleStringParts(parts: string[]): { parts: string[]; order: number[] } {
+    const shuffled = parts.map((value, index) => ({ value, index }));
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const pickAt = crypto.randomInt(0, i + 1);
+        const current = shuffled[i];
+        shuffled[i] = shuffled[pickAt] as { value: string; index: number };
+        shuffled[pickAt] = current as { value: string; index: number };
+    }
+
+    return {
+        parts: shuffled.map((entry) => entry.value),
+        order: shuffled.map((entry) => entry.index),
     };
 }
 
@@ -425,6 +444,16 @@ function pickNumberOperatorFamily(): readonly NumberObfuscationOperator[] {
         : MULTIPLICATIVE_NUMBER_OPERATORS;
 }
 
+function pickNumberOperators(
+    family: NumberObfuscationOperatorFamily | null
+): readonly NumberObfuscationOperator[] {
+    if (family === null) {
+        return pickNumberOperatorFamily();
+    }
+
+    return family === "+-" ? ADDITIVE_NUMBER_OPERATORS : MULTIPLICATIVE_NUMBER_OPERATORS;
+}
+
 function encodeNumber(
     original: number,
     operator: NumberObfuscationOperator,
@@ -440,6 +469,8 @@ function encodeNumber(
         case "/":
             return original / offset;
     }
+
+    throw new Error(`Unsupported number operator: ${operator}`);
 }
 
 function randomNumberOffset(operators: readonly NumberObfuscationOperator[]): number {
@@ -472,4 +503,6 @@ function encodeNumberOperator(operator: NumberObfuscationOperator): number {
         case "/":
             return 3;
     }
+
+    throw new Error(`Unsupported number operator: ${operator}`);
 }

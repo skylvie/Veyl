@@ -1,25 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
-import type {
-    LogLevel,
-    NumberObfuscationOperator,
-    ObfuscationConfigInput,
-    StringObfuscationMethod,
-} from "../types/config.js";
 import { DEFAULT_CONFIG_FILE } from "./defaults.js";
 import {
     isLogLevel,
-    isNumberObfuscationOperator,
+    isNumberObfuscationOperatorFamily,
     isPlainObject,
     isStringObfuscationMethod,
 } from "./guards.js";
+import type {
+    LogLevel,
+    NumberObfuscationOperatorFamily,
+    ObfuscationConfigInput,
+    StringObfuscationMethod,
+} from "./types.js";
 
-/**
- * Reads and validates a Veyl JSON config file from disk.
- *
- * The returned object is still partial; pass it to `resolveConfig` to fill
- * defaults.
- */
 export function loadConfigFile(configPath: string): ObfuscationConfigInput {
     const raw = fs.readFileSync(configPath, "utf-8");
     const parsed: unknown = JSON.parse(raw);
@@ -28,16 +22,25 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
         throw new Error(`Config file must contain a JSON object: ${configPath}`);
     }
 
-    assertNoUnknownKeys(parsed, ["log_level", "features", "options"], "config");
+    assertNoUnknownKeys(parsed, ["log_level", "minify", "obfuscate", "features"], "config");
 
+    const obfuscate = readObject(parsed, "obfuscate");
+    const strings = obfuscate === undefined ? undefined : readObject(obfuscate, "strings");
+    const numbers = obfuscate === undefined ? undefined : readObject(obfuscate, "numbers");
+    const booleans = obfuscate === undefined ? undefined : readObject(obfuscate, "booleans");
     const features = readObject(parsed, "features");
-    const obfuscate = features === undefined ? undefined : readObject(features, "obfuscate");
-    const options = readObject(parsed, "options");
 
+    assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "obfuscate");
+    assertNoUnknownKeys(
+        strings,
+        ["enabled", "encode", "method", "split_length"],
+        "obfuscate.strings"
+    );
+    assertNoUnknownKeys(numbers, ["enabled", "offset", "operator"], "obfuscate.numbers");
+    assertNoUnknownKeys(booleans, ["enabled", "number"], "obfuscate.booleans");
     assertNoUnknownKeys(
         features,
         [
-            "obfuscate",
             "randomized_unique_identifiers",
             "unnecessary_depth",
             "dead_code_injection",
@@ -47,28 +50,36 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
         ],
         "features"
     );
-    assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "features.obfuscate");
-    assertNoUnknownKeys(
-        options,
-        [
-            "minify",
-            "string_method",
-            "string_split_length",
-            "boolean_number",
-            "number_offset",
-            "number_operator",
-        ],
-        "options"
-    );
 
     return {
         log_level: readOptionalLogLevel(parsed, "log_level", "log_level"),
-        features: {
-            obfuscate: {
-                strings: readOptionalBoolean(obfuscate, "strings", "features.obfuscate.strings"),
-                numbers: readOptionalBoolean(obfuscate, "numbers", "features.obfuscate.numbers"),
-                booleans: readOptionalBoolean(obfuscate, "booleans", "features.obfuscate.booleans"),
+        minify: readOptionalBoolean(parsed, "minify", "minify"),
+        obfuscate: {
+            strings: {
+                enabled: readOptionalBoolean(strings, "enabled", "obfuscate.strings.enabled"),
+                encode: readOptionalBoolean(strings, "encode", "obfuscate.strings.encode"),
+                method: readOptionalStringMethod(strings, "method", "obfuscate.strings.method"),
+                split_length: readOptionalPositiveInteger(
+                    strings,
+                    "split_length",
+                    "obfuscate.strings.split_length"
+                ),
             },
+            numbers: {
+                enabled: readOptionalBoolean(numbers, "enabled", "obfuscate.numbers.enabled"),
+                offset: readOptionalNumberOrNull(numbers, "offset", "obfuscate.numbers.offset"),
+                operator: readOptionalNumberOperatorFamily(
+                    numbers,
+                    "operator",
+                    "obfuscate.numbers.operator"
+                ),
+            },
+            booleans: {
+                enabled: readOptionalBoolean(booleans, "enabled", "obfuscate.booleans.enabled"),
+                number: readOptionalNumberOrNull(booleans, "number", "obfuscate.booleans.number"),
+            },
+        },
+        features: {
             randomized_unique_identifiers: readOptionalBoolean(
                 features,
                 "randomized_unique_identifiers",
@@ -92,42 +103,9 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             simplify: readOptionalBoolean(features, "simplify", "features.simplify"),
             functionify: readOptionalBoolean(features, "functionify", "features.functionify"),
         },
-        options: {
-            minify: readOptionalBoolean(options, "minify", "options.minify"),
-            string_method: readOptionalStringMethod(
-                options,
-                "string_method",
-                "options.string_method"
-            ),
-            string_split_length: readOptionalPositiveInteger(
-                options,
-                "string_split_length",
-                "options.string_split_length"
-            ),
-            boolean_number: readOptionalNumberOrNull(
-                options,
-                "boolean_number",
-                "options.boolean_number"
-            ),
-            number_offset: readOptionalNumberOrNull(
-                options,
-                "number_offset",
-                "options.number_offset"
-            ),
-            number_operator: readOptionalNumberOperator(
-                options,
-                "number_operator",
-                "options.number_operator"
-            ),
-        },
     };
 }
 
-/**
- * Reads `veyl_config.json` from `cwd` when present.
- *
- * Returns an empty config object when the default file does not exist.
- */
 export function loadDefaultConfigFile(cwd: string): ObfuscationConfigInput {
     const configPath = path.resolve(cwd, DEFAULT_CONFIG_FILE);
 
@@ -224,11 +202,11 @@ function readOptionalNumberOrNull(
     return input[key];
 }
 
-function readOptionalNumberOperator(
+function readOptionalNumberOperatorFamily(
     input: Record<string, unknown> | undefined,
     key: string,
     label: string
-): NumberObfuscationOperator | null | undefined {
+): NumberObfuscationOperatorFamily | null | undefined {
     if (input === undefined || input[key] === undefined) {
         return undefined;
     }
@@ -237,11 +215,11 @@ function readOptionalNumberOperator(
         return null;
     }
 
-    if (isNumberObfuscationOperator(input[key])) {
+    if (isNumberObfuscationOperatorFamily(input[key])) {
         return input[key];
     }
 
-    throw new Error(`${label} must be one of "+", "-", "*", "/", null, or "randomized"`);
+    throw new Error(`${label} must be one of "+-", "*/", null, or "randomized"`);
 }
 
 function readOptionalStringMethod(

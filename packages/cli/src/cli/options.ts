@@ -1,6 +1,11 @@
 import path from "node:path";
-import type { LogLevel, NumberObfuscationOperator, StringObfuscationMethod } from "@skylvi/veyl";
-import { DEFAULT_CONFIG_FILE, mergeConfig } from "@skylvi/veyl";
+import type {
+    LogLevel,
+    NumberObfuscationOperatorFamily,
+    ObfuscationConfigInput,
+    StringObfuscationMethod,
+} from "@skylvi/veyl-config";
+import { DEFAULT_CONFIG_FILE, mergeConfig } from "@skylvi/veyl-config";
 import { Command, InvalidArgumentError, Option } from "commander";
 import type { CliOptions } from "../types/cli.js";
 
@@ -27,21 +32,57 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
-                "--obfuscated-strings, --obfuscated_strings <true|false>",
+                "--strings-enabled, --strings_enabled <true|false>",
                 "Enable or disable string literal obfuscation."
-            ).argParser((value: string) => parseBoolean(value, "--obfuscated-strings"))
+            ).argParser((value: string) => parseBoolean(value, "--strings-enabled"))
         )
         .addOption(
             new Option(
-                "--obfuscated-numbers, --obfuscated_numbers <true|false>",
+                "--strings-encode, --strings_encode <true|false>",
+                "Encode string chunks before runtime decode."
+            ).argParser((value: string) => parseBoolean(value, "--strings-encode"))
+        )
+        .addOption(
+            new Option(
+                "--strings-method, --strings_method <array|split>",
+                "String obfuscation method."
+            ).argParser((value: string) => parseStringMethod(value, "--strings-method"))
+        )
+        .addOption(
+            new Option(
+                "--strings-split-length, --strings_split_length <num>",
+                "Chunk length used by split string obfuscation."
+            ).argParser((value: string) => parsePositiveInteger(value, "--strings-split-length"))
+        )
+        .addOption(
+            new Option(
+                "--numbers-enabled, --numbers_enabled <true|false>",
                 "Enable or disable number literal obfuscation."
-            ).argParser((value: string) => parseBoolean(value, "--obfuscated-numbers"))
+            ).argParser((value: string) => parseBoolean(value, "--numbers-enabled"))
         )
         .addOption(
             new Option(
-                "--obfuscated-booleans, --obfuscated_booleans <true|false>",
+                "--numbers-offset, --numbers_offset <num|randomized>",
+                "Number offset for numeric literal obfuscation."
+            ).argParser((value: string) => parseNumberOrRandomized(value, "--numbers-offset"))
+        )
+        .addOption(
+            new Option(
+                "--numbers-operator, --numbers_operator <+-|*/|randomized>",
+                "Number operator family for numeric literal obfuscation."
+            ).argParser((value: string) => parseNumberOperatorFamily(value, "--numbers-operator"))
+        )
+        .addOption(
+            new Option(
+                "--booleans-enabled, --booleans_enabled <true|false>",
                 "Enable or disable boolean literal obfuscation."
-            ).argParser((value: string) => parseBoolean(value, "--obfuscated-booleans"))
+            ).argParser((value: string) => parseBoolean(value, "--booleans-enabled"))
+        )
+        .addOption(
+            new Option(
+                "--booleans-number, --booleans_number <num|randomized>",
+                "Numeric token used for obfuscated true values."
+            ).argParser((value: string) => parseNumberOrRandomized(value, "--booleans-number"))
         )
         .addOption(
             new Option(
@@ -78,44 +119,6 @@ export function buildCliProgram(versionText: string): Command {
                 "--simplify <true|false>",
                 "Apply compacting rewrites such as merged declarations and conditional returns."
             ).argParser((value: string) => parseBoolean(value, "--simplify"))
-        )
-        .addOption(
-            new Option(
-                "--string-method, --string_method <array|split>",
-                "String obfuscation method."
-            ).argParser((value: string) => parseStringMethod(value, "--string-method"))
-        )
-        .addOption(
-            new Option(
-                "--string-split-length, --string_split_length <num>",
-                "Chunk length used by split string obfuscation."
-            ).argParser((value: string) =>
-                parsePositiveInteger(value, "--string-split-length")
-            )
-        )
-        .addOption(
-            new Option(
-                "--number-obfuscation-offset, --number_obfuscation_offset <num|randomized>",
-                "Number offset for numeric literal obfuscation."
-            ).argParser((value: string) =>
-                parseNumberOrRandomized(value, "--number-obfuscation-offset")
-            )
-        )
-        .addOption(
-            new Option(
-                "--number-obfuscation-operator, --number_obfuscation_operator <+|-|*|/|randomized>",
-                "Number operator for numeric literal obfuscation."
-            ).argParser((value: string) =>
-                parseNumberOperator(value, "--number-obfuscation-operator")
-            )
-        )
-        .addOption(
-            new Option(
-                "--boolean-obfuscation-number, --boolean_obfuscation_number <num|randomized>",
-                "Numeric token used for obfuscated true values."
-            ).argParser((value: string) =>
-                parseNumberOrRandomized(value, "--boolean-obfuscation-number")
-            )
         )
         .addOption(
             new Option(
@@ -175,22 +178,39 @@ export function readLogLevelFlag(argv: string[]): LogLevel | null {
     return null;
 }
 
-function buildConfigOverrides(parsed: CommanderCliOptions) {
-    const obfuscatedStrings = readAliasedOption(
+function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInput {
+    const stringsEnabled = readAliasedOption(parsed, "stringsEnabled", "strings_enabled") as
+        | boolean
+        | undefined;
+    const stringsEncode = readAliasedOption(parsed, "stringsEncode", "strings_encode") as
+        | boolean
+        | undefined;
+    const stringsMethod = readAliasedOption(parsed, "stringsMethod", "strings_method") as
+        | StringObfuscationMethod
+        | undefined;
+    const stringsSplitLength = readAliasedOption(
         parsed,
-        "obfuscatedStrings",
-        "obfuscated_strings"
-    ) as boolean | undefined;
-    const obfuscatedNumbers = readAliasedOption(
-        parsed,
-        "obfuscatedNumbers",
-        "obfuscated_numbers"
-    ) as boolean | undefined;
-    const obfuscatedBooleans = readAliasedOption(
-        parsed,
-        "obfuscatedBooleans",
-        "obfuscated_booleans"
-    ) as boolean | undefined;
+        "stringsSplitLength",
+        "strings_split_length"
+    ) as number | undefined;
+    const numbersEnabled = readAliasedOption(parsed, "numbersEnabled", "numbers_enabled") as
+        | boolean
+        | undefined;
+    const numbersOffset = readAliasedOption(parsed, "numbersOffset", "numbers_offset") as
+        | number
+        | null
+        | undefined;
+    const numbersOperator = readAliasedOption(parsed, "numbersOperator", "numbers_operator") as
+        | NumberObfuscationOperatorFamily
+        | null
+        | undefined;
+    const booleansEnabled = readAliasedOption(parsed, "booleansEnabled", "booleans_enabled") as
+        | boolean
+        | undefined;
+    const booleansNumber = readAliasedOption(parsed, "booleansNumber", "booleans_number") as
+        | number
+        | null
+        | undefined;
     const randomizedUniqueIdentifiers = readAliasedOption(
         parsed,
         "randomizedUniqueIdentifiers",
@@ -207,48 +227,99 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         "control_flow_flattening"
     ) as boolean | undefined;
     const simplify = readAliasedOption(parsed, "simplify", "simplify") as boolean | undefined;
-    const stringMethod = readAliasedOption(parsed, "stringMethod", "string_method") as
-        | StringObfuscationMethod
-        | undefined;
-    const stringSplitLength = readAliasedOption(parsed, "stringSplitLength", "string_split_length") as
-        | number
-        | undefined;
-    const numberObfuscationOffset = readAliasedOption(
-        parsed,
-        "numberObfuscationOffset",
-        "number_obfuscation_offset"
-    ) as number | null | undefined;
-    const numberObfuscationOperator = readAliasedOption(
-        parsed,
-        "numberObfuscationOperator",
-        "number_obfuscation_operator"
-    ) as NumberObfuscationOperator | null | undefined;
-    const booleanObfuscationNumber = readAliasedOption(
-        parsed,
-        "booleanObfuscationNumber",
-        "boolean_obfuscation_number"
-    ) as number | null | undefined;
     const unnecessaryDepth = readAliasedOption(parsed, "unnecessaryDepth", "unnecessary_depth") as
         | boolean
         | undefined;
     const logLevel = readAliasedOption(parsed, "logLevel", "log_level") as LogLevel | undefined;
-    let configOverrides = {};
+    let configOverrides: ObfuscationConfigInput = {};
 
-    if (obfuscatedStrings !== undefined) {
+    if (stringsEnabled !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            features: { obfuscate: { strings: obfuscatedStrings } },
+            obfuscate: {
+                strings: {
+                    enabled: stringsEnabled,
+                },
+            },
         });
     }
 
-    if (obfuscatedNumbers !== undefined) {
+    if (stringsEncode !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            features: { obfuscate: { numbers: obfuscatedNumbers } },
+            obfuscate: {
+                strings: {
+                    encode: stringsEncode,
+                },
+            },
         });
     }
 
-    if (obfuscatedBooleans !== undefined) {
+    if (stringsMethod !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            features: { obfuscate: { booleans: obfuscatedBooleans } },
+            obfuscate: {
+                strings: {
+                    method: stringsMethod,
+                },
+            },
+        });
+    }
+
+    if (stringsSplitLength !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                strings: {
+                    split_length: stringsSplitLength,
+                },
+            },
+        });
+    }
+
+    if (numbersEnabled !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                numbers: {
+                    enabled: numbersEnabled,
+                },
+            },
+        });
+    }
+
+    if (numbersOffset !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                numbers: {
+                    offset: numbersOffset,
+                },
+            },
+        });
+    }
+
+    if (numbersOperator !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                numbers: {
+                    operator: numbersOperator,
+                },
+            },
+        });
+    }
+
+    if (booleansEnabled !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                booleans: {
+                    enabled: booleansEnabled,
+                },
+            },
+        });
+    }
+
+    if (booleansNumber !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                booleans: {
+                    number: booleansNumber,
+                },
+            },
         });
     }
 
@@ -262,9 +333,7 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
 
     if (parsed.minify !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
-            options: {
-                minify: parsed.minify,
-            },
+            minify: parsed.minify,
         });
     }
 
@@ -296,46 +365,6 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         configOverrides = mergeConfig(configOverrides, {
             features: {
                 simplify,
-            },
-        });
-    }
-
-    if (stringMethod !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                string_method: stringMethod,
-            },
-        });
-    }
-
-    if (stringSplitLength !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                string_split_length: stringSplitLength,
-            },
-        });
-    }
-
-    if (numberObfuscationOffset !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                number_offset: numberObfuscationOffset,
-            },
-        });
-    }
-
-    if (numberObfuscationOperator !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                number_operator: numberObfuscationOperator,
-            },
-        });
-    }
-
-    if (booleanObfuscationNumber !== undefined) {
-        configOverrides = mergeConfig(configOverrides, {
-            options: {
-                boolean_number: booleanObfuscationNumber,
             },
         });
     }
@@ -408,16 +437,19 @@ function parsePositiveInteger(value: string, flag: string): number {
     return parsed;
 }
 
-function parseNumberOperator(value: string, flag: string): NumberObfuscationOperator | null {
+function parseNumberOperatorFamily(
+    value: string,
+    flag: string
+): NumberObfuscationOperatorFamily | null {
     if (value === "randomized") {
         return null;
     }
 
-    if (value === "+" || value === "-" || value === "*" || value === "/") {
+    if (value === "+-" || value === "*/") {
         return value;
     }
 
-    throw new InvalidArgumentError(`${flag} must be one of +, -, *, /, or randomized`);
+    throw new InvalidArgumentError(`${flag} must be "+-", "*/", or randomized`);
 }
 
 function parseStringMethod(value: string, flag: string): StringObfuscationMethod {
@@ -440,20 +472,21 @@ interface CommanderCliOptions {
     input: string;
     output: string;
     config?: string;
-    obfuscatedStrings?: boolean;
-    obfuscatedNumbers?: boolean;
-    obfuscatedBooleans?: boolean;
+    stringsEnabled?: boolean;
+    stringsEncode?: boolean;
+    stringsMethod?: StringObfuscationMethod;
+    stringsSplitLength?: number;
+    numbersEnabled?: boolean;
+    numbersOffset?: number | null;
+    numbersOperator?: NumberObfuscationOperatorFamily | null;
+    booleansEnabled?: boolean;
+    booleansNumber?: number | null;
     randomizedUniqueIdentifiers?: boolean;
     minify?: boolean;
     functionify?: boolean;
     deadCodeInjection?: boolean;
     controlFlowFlattening?: boolean;
     simplify?: boolean;
-    stringMethod?: StringObfuscationMethod;
-    stringSplitLength?: number;
-    numberObfuscationOffset?: number | null;
-    numberObfuscationOperator?: NumberObfuscationOperator | null;
-    booleanObfuscationNumber?: number | null;
     unnecessaryDepth?: boolean;
     logLevel?: LogLevel;
 }
