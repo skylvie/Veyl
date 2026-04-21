@@ -28,6 +28,7 @@ export function printStats(
     logger.debug(`  properties: ${stats.renamedProperties} renamed\n`);
     logger.debug(`  depth refs: ${stats.addedDepthReferences} added\n`);
     logger.debug(`  dead code:  ${stats.addedDeadCodeBlocks} blocks\n`);
+    logger.debug(`  flattened:  ${stats.flattenedControlFlowBlocks} blocks\n`);
     logger.debug(
         `  literals:   ${totalLiterals} obfuscated ` +
             color.gray(
@@ -61,6 +62,9 @@ function printConfigSummary(
     );
     logger.debug(
         `  dead code injection:            ${formatBoolean(config.features.dead_code_injection)}\n`
+    );
+    logger.debug(
+        `  control flow flattening:        ${formatBoolean(config.features.control_flow_flattening)}\n`
     );
     logger.debug(
         `  boolean obfuscation number:     ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n`

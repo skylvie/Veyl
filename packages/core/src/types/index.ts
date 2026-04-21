@@ -24,6 +24,7 @@ export type { RuntimeHelperOptions } from "./runtime.js";
 export type {
     CallablePath,
     ClassDeclarationPath,
+    ControlFlowFlatteningResult,
     IdentifierNode,
     LiteralObfuscationResult,
     MemberExpressionNode,

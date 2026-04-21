@@ -35,6 +35,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             "randomized_unique_identifiers",
             "unnecessary_depth",
             "dead_code_injection",
+            "control_flow_flattening",
             "functionify",
         ],
         "features"
@@ -68,6 +69,11 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
                 features,
                 "dead_code_injection",
                 "features.dead_code_injection"
+            ),
+            control_flow_flattening: readOptionalBoolean(
+                features,
+                "control_flow_flattening",
+                "features.control_flow_flattening"
             ),
             functionify: readOptionalBoolean(features, "functionify", "features.functionify"),
         },

@@ -6,6 +6,7 @@ import * as t from "@babel/types";
 import { generate } from "../babel/interop.js";
 import { resolveConfig } from "../config/index.js";
 import { buildRuntimeHelpers, insertHelperStatements } from "../runtime/index.js";
+import { flattenControlFlow } from "../transforms/controlFlowFlattening.js";
 import { injectDeadCode } from "../transforms/deadCodeInjector.js";
 import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
@@ -47,6 +48,7 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
         renamedProperties: transformed.renamedProperties,
         addedDepthReferences: transformed.addedDepthReferences,
         addedDeadCodeBlocks: transformed.addedDeadCodeBlocks,
+        flattenedControlFlowBlocks: transformed.flattenedControlFlowBlocks,
         obfuscatedStrings: transformed.obfuscatedStrings,
         obfuscatedNumbers: transformed.obfuscatedNumbers,
         obfuscatedBooleans: transformed.obfuscatedBooleans,
@@ -89,6 +91,9 @@ export function obfuscateCode(
     const deadCodeResult = config.features.dead_code_injection
         ? injectDeadCode(ast, names)
         : { addedBlocks: 0 };
+    const controlFlowResult = config.features.control_flow_flattening
+        ? flattenControlFlow(ast, names)
+        : { flattenedBlocks: 0 };
     const literalResult = obfuscateLiterals(ast, names, config);
 
     if (config.features.functionify) {
@@ -113,6 +118,7 @@ export function obfuscateCode(
         renamedProperties: propertyResult.renamedProperties,
         addedDepthReferences: depthResult.addedReferences,
         addedDeadCodeBlocks: deadCodeResult.addedBlocks,
+        flattenedControlFlowBlocks: controlFlowResult.flattenedBlocks,
         obfuscatedStrings: literalResult.stringCount,
         obfuscatedNumbers: literalResult.numberCount,
         obfuscatedBooleans: literalResult.booleanCount,

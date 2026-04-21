@@ -36,6 +36,8 @@ export interface ObfuscationStats {
     addedDepthReferences: number;
     /** Number of unreachable dead-code blocks injected. */
     addedDeadCodeBlocks: number;
+    /** Number of statement sequences rewritten as flattened dispatcher blocks. */
+    flattenedControlFlowBlocks: number;
     /** Number of string literals obfuscated. */
     obfuscatedStrings: number;
     /** Number of number literals obfuscated. */
@@ -64,6 +66,8 @@ export interface ObfuscateCodeResult {
     addedDepthReferences: number;
     /** Number of unreachable dead-code blocks injected. */
     addedDeadCodeBlocks: number;
+    /** Number of statement sequences rewritten as flattened dispatcher blocks. */
+    flattenedControlFlowBlocks: number;
     /** Number of string literals obfuscated. */
     obfuscatedStrings: number;
     /** Number of number literals obfuscated. */

@@ -21,6 +21,10 @@ export interface DeadCodeInjectionResult {
     addedBlocks: number;
 }
 
+export interface ControlFlowFlatteningResult {
+    flattenedBlocks: number;
+}
+
 export interface CallablePath {
     node: {
         callee: BabelNode;
