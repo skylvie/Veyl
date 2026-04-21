@@ -1,9 +1,10 @@
 import type * as t from "@babel/types";
 import type { BabelNode, PropKeyNode } from "./babel.js";
 import type { NumberObfuscationOperator } from "./config.js";
+import type { RuntimeHelperOptions } from "./runtime.js";
 
 export interface LiteralObfuscationResult {
-    helperNodes: t.Statement[];
+    runtimeOptions: RuntimeHelperOptions;
     stringCount: number;
     numberCount: number;
     booleanCount: number;

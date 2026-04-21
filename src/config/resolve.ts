@@ -26,6 +26,9 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
             unnecessary_depth:
                 input?.features?.unnecessary_depth ??
                 DEFAULT_OBFUSCATION_CONFIG.features.unnecessary_depth,
+            functionify:
+                input?.features?.functionify ??
+                DEFAULT_OBFUSCATION_CONFIG.features.functionify,
         },
         options: {
             minify: input?.options?.minify ?? DEFAULT_OBFUSCATION_CONFIG.options.minify,
@@ -66,6 +69,7 @@ export function mergeConfig(
                 base.features?.randomized_unique_identifiers,
             unnecessary_depth:
                 override.features?.unnecessary_depth ?? base.features?.unnecessary_depth,
+            functionify: override.features?.functionify ?? base.features?.functionify,
         },
         options: {
             ...base.options,
@@ -75,6 +79,7 @@ export function mergeConfig(
 }
 
 function validateConfig(config: ObfuscationConfig): void {
+    const functionify = config.features.functionify;
     const minify = config.options.minify;
     const booleanNumber = config.options.boolean_number;
     const numberOffset = config.options.number_offset;
@@ -82,6 +87,10 @@ function validateConfig(config: ObfuscationConfig): void {
 
     if (!isLogLevel(config.log_level)) {
         throw new Error("log_level must be one of none, error, info, or debug");
+    }
+
+    if (typeof functionify !== "boolean") {
+        throw new Error("features.functionify must be true or false");
     }
 
     if (typeof minify !== "boolean") {

@@ -6,7 +6,6 @@ import {
     isModuleStringLiteral,
     isPropertyKeyNode,
 } from "../babel/predicates.js";
-import { buildRuntimeHelpers } from "../runtime/index.js";
 import type { BabelNode, BabelNodePath } from "../types/babel.js";
 import type { NumberObfuscationOperator, ObfuscationConfig } from "../types/config.js";
 import type { LiteralObfuscationResult } from "../types/transforms.js";
@@ -26,7 +25,7 @@ export function obfuscateLiterals(
     names: NameGenerator,
     config: ObfuscationConfig
 ): LiteralObfuscationResult {
-    const runtimeOptions: Parameters<typeof buildRuntimeHelpers>[0] = {};
+    const runtimeOptions: LiteralObfuscationResult["runtimeOptions"] = {};
     let stringCount = 0;
     let numberCount = 0;
     let booleanCount = 0;
@@ -223,10 +222,8 @@ export function obfuscateLiterals(
         };
     }
 
-    const helperNodes = buildRuntimeHelpers(runtimeOptions);
-
     return {
-        helperNodes,
+        runtimeOptions,
         stringCount,
         numberCount,
         booleanCount,

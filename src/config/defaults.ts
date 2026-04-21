@@ -14,6 +14,7 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         },
         randomized_unique_identifiers: true,
         unnecessary_depth: true,
+        functionify: false,
     },
     options: {
         minify: true,

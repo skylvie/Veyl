@@ -44,7 +44,8 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 			"booleans": true // Do boolean obfuscation
 		},
 		"randomized_unique_identifiers": true, // Randomize identifiers (e.g. `_0x1a2b3c`)
-		"unnecessary_depth": true // Add "unnecessary" depth (explained in "How It Works" section)
+		"unnecessary_depth": true, // Add "unnecessary" depth (explained in "How It Works" section)
+		"functionify": false // Run the final program body through `new Function(...)`
 	},
 	"options": { // Leave these as "randomized" or `null` to use random values
 		"minify": true, // Run the final esbuild minify pass
@@ -69,6 +70,7 @@ You can also use CLI flags instead:
 --obfuscated-booleans=true|false
 --randomized-unique-identifiers=true|false
 --minify=true|false
+--functionify=true|false
 --number-obfuscation-offset=<num|randomized>
 --number-obfuscation-operator=<+|-|*|/|randomized>
 --boolean-obfuscation-number=<num|randomized>
@@ -185,6 +187,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - String literals are moved into a randomized string table. Each stored string is encoded with base64, bit rotation, and XOR, then decoded at runtime by injected helper functions.
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
+- When `features.functionify` is enabled, Veyl stringifies the transformed program body, obfuscates that body string, and executes it through `new Function(...)` while passing imported bindings and helper functions in as runtime arguments.
 
 Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. By default, esbuild minifies the transformed JS while preserving the randomized identifiers, but you can disable that final minify step with `options.minify` or `--minify=false`.
 

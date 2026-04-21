@@ -30,7 +30,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
 
     assertNoUnknownKeys(
         features,
-        ["obfuscate", "randomized_unique_identifiers", "unnecessary_depth"],
+        ["obfuscate", "randomized_unique_identifiers", "unnecessary_depth", "functionify"],
         "features"
     );
     assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "features.obfuscate");
@@ -58,6 +58,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
                 "unnecessary_depth",
                 "features.unnecessary_depth"
             ),
+            functionify: readOptionalBoolean(features, "functionify", "features.functionify"),
         },
         options: {
             minify: readOptionalBoolean(options, "minify", "options.minify"),

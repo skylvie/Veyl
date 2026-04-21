@@ -74,6 +74,14 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Enable or disable the final esbuild minify step.",
     },
     {
+        flags: ["--functionify"],
+        target: "functionify",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Wrap the transformed program body in a runtime `new Function(...)` call.",
+    },
+    {
         flags: ["--number-obfuscation-offset", "--number_obfuscation_offset"],
         helpFlags: ["--number-obfuscation-offset"],
         target: "numberObfuscationOffset",
@@ -300,6 +308,13 @@ function assignCliValue(options: CliOptions, target: string, value: string): voi
             options.configOverrides = mergeConfig(options.configOverrides, {
                 options: {
                     minify: parseBoolean(value, "--minify"),
+                },
+            });
+            return;
+        case "functionify":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                features: {
+                    functionify: parseBoolean(value, "--functionify"),
                 },
             });
             return;

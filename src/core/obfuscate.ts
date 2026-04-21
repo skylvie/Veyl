@@ -1,16 +1,20 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import * as babelParser from "@babel/parser";
+import * as t from "@babel/types";
 import { generate } from "../babel/interop.js";
 import { resolveConfig } from "../config/index.js";
-import { insertHelperStatements } from "../runtime/index.js";
+import { buildRuntimeHelpers, insertHelperStatements } from "../runtime/index.js";
 import { renameBindings } from "../transforms/identifierRenamer.js";
 import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";
 import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
 import type { ObfuscationConfigInput } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
+import type { RuntimeHelperOptions } from "../types/runtime.js";
 import { NameGenerator } from "../utils/random.js";
+import { encodeStringLiteralValue } from "../utils/random.js";
 import { bundleInput, compactOutput } from "./bundler.js";
 
 /**
@@ -83,7 +87,13 @@ export function obfuscateCode(
         : { addedReferences: 0 };
     const literalResult = obfuscateLiterals(ast, names, config);
 
-    insertHelperStatements(ast, literalResult.helperNodes);
+    if (config.features.functionify) {
+        functionifyProgram(ast, names, literalResult.runtimeOptions);
+        literalResult.stringCount++;
+    }
+
+    const helperNodes = buildRuntimeHelpers(literalResult.runtimeOptions);
+    insertHelperStatements(ast, helperNodes);
     const helperBindingPass = config.features.randomized_unique_identifiers
         ? renameBindings(ast, names)
         : 0;
@@ -105,4 +115,195 @@ export function obfuscateCode(
         numberObfuscationOffset: literalResult.numberOffset,
         numberObfuscationOperators: literalResult.numberOperators,
     };
+}
+
+function functionifyProgram(
+    ast: object,
+    names: NameGenerator,
+    runtimeOptions: RuntimeHelperOptions
+): void {
+    const program = (ast as { program?: { body?: t.Statement[] } }).program;
+
+    if (program?.body === undefined) {
+        return;
+    }
+
+    let importCount = 0;
+
+    while (importCount < program.body.length && t.isImportDeclaration(program.body[importCount])) {
+        importCount++;
+    }
+
+    const imports = program.body.slice(0, importCount);
+    const bodyStatements = program.body.slice(importCount);
+
+    if (bodyStatements.length === 0) {
+        return;
+    }
+
+    if (bodyStatements.some((statement) => t.isExportDeclaration(statement))) {
+        throw new Error("features.functionify does not support export statements");
+    }
+
+    const bodyCode = generate(t.file(t.program(bodyStatements)), {
+        comments: false,
+        compact: false,
+    }).code;
+    const functionParamNames = [
+        ...collectTopLevelBindingNames(imports),
+        ...collectRuntimeBindingNames(runtimeOptions),
+    ];
+    const bodyStringRef = addFunctionifiedBodyString(runtimeOptions, names, bodyCode);
+    const bodyStringExpression = t.callExpression(t.identifier(bodyStringRef.decoderName), [
+        t.callExpression(t.identifier(bodyStringRef.accessorName), [
+            t.numericLiteral(bodyStringRef.tableIndex),
+        ]),
+    ]);
+    const functionCall = t.expressionStatement(
+        t.callExpression(
+            t.newExpression(t.identifier("Function"), [
+                ...functionParamNames.map((name) => t.stringLiteral(name)),
+                bodyStringExpression,
+            ]),
+            functionParamNames.map((name) => t.identifier(name))
+        )
+    );
+
+    program.body = [...imports, functionCall];
+}
+
+function collectTopLevelBindingNames(statements: t.Statement[]): string[] {
+    const names: string[] = [];
+
+    for (const statement of statements) {
+        if (t.isImportDeclaration(statement)) {
+            for (const specifier of statement.specifiers) {
+                names.push(specifier.local.name);
+            }
+
+            continue;
+        }
+
+        if (t.isFunctionDeclaration(statement) && statement.id && t.isIdentifier(statement.id)) {
+            names.push(statement.id.name);
+            continue;
+        }
+
+        if (t.isClassDeclaration(statement) && statement.id && t.isIdentifier(statement.id)) {
+            names.push(statement.id.name);
+            continue;
+        }
+
+        if (t.isVariableDeclaration(statement)) {
+            for (const declaration of statement.declarations) {
+                collectPatternBindingNames(declaration.id, names);
+            }
+        }
+    }
+
+    return [...new Set(names)];
+}
+
+function collectRuntimeBindingNames(runtimeOptions: RuntimeHelperOptions): string[] {
+    const names: string[] = [];
+
+    if (runtimeOptions.strings !== undefined) {
+        names.push(
+            runtimeOptions.strings.tableName,
+            runtimeOptions.strings.accessorName,
+            runtimeOptions.strings.decoderName
+        );
+    }
+
+    if (runtimeOptions.numbers !== undefined) {
+        names.push(runtimeOptions.numbers.decoderName);
+    }
+
+    if (runtimeOptions.booleans !== undefined) {
+        names.push(runtimeOptions.booleans.decoderName);
+    }
+
+    return names;
+}
+
+function addFunctionifiedBodyString(
+    runtimeOptions: RuntimeHelperOptions,
+    names: NameGenerator,
+    bodyCode: string
+): { accessorName: string; decoderName: string; tableIndex: number } {
+    if (runtimeOptions.strings === undefined) {
+        runtimeOptions.strings = {
+            tableName: names.freshIdentifier(),
+            accessorName: names.freshIdentifier(),
+            decoderName: names.freshIdentifier(),
+            encodedTable: [],
+            xorKey: crypto.randomInt(1, 256),
+        };
+    }
+
+    const tableIndex = runtimeOptions.strings.encodedTable.length;
+
+    runtimeOptions.strings.encodedTable.push(
+        chunkEncodedString(encodeStringLiteralValue(bodyCode, runtimeOptions.strings.xorKey))
+    );
+
+    return {
+        accessorName: runtimeOptions.strings.accessorName,
+        decoderName: runtimeOptions.strings.decoderName,
+        tableIndex,
+    };
+}
+
+function collectPatternBindingNames(pattern: t.Node, names: string[]): void {
+    if (t.isIdentifier(pattern)) {
+        names.push(pattern.name);
+        return;
+    }
+
+    if (t.isObjectPattern(pattern)) {
+        for (const property of pattern.properties) {
+            if (t.isObjectProperty(property)) {
+                collectPatternBindingNames(property.value, names);
+            }
+
+            if (t.isRestElement(property)) {
+                collectPatternBindingNames(property.argument, names);
+            }
+        }
+
+        return;
+    }
+
+    if (t.isArrayPattern(pattern)) {
+        for (const element of pattern.elements) {
+            if (element !== null) {
+                collectPatternBindingNames(element, names);
+            }
+        }
+
+        return;
+    }
+
+    if (t.isAssignmentPattern(pattern)) {
+        collectPatternBindingNames(pattern.left, names);
+        return;
+    }
+
+    if (t.isRestElement(pattern)) {
+        collectPatternBindingNames(pattern.argument, names);
+    }
+}
+
+function chunkEncodedString(input: string): string[] {
+    if (input.length === 0) {
+        return [""];
+    }
+
+    const chunks: string[] = [];
+
+    for (let i = 0; i < input.length; i += 3) {
+        chunks.push(input.slice(i, i + 3));
+    }
+
+    return chunks;
 }

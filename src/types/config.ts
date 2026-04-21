@@ -21,6 +21,8 @@ export interface ObfuscationConfig {
         randomized_unique_identifiers: boolean;
         /** Add extra local references before direct calls/constructors when true. */
         unnecessary_depth: boolean;
+        /** Wrap the transformed program body in `new Function(...)` when true. */
+        functionify: boolean;
     };
     options: {
         /** Run the final esbuild minify step on transformed output. */
@@ -50,6 +52,7 @@ export type ObfuscationConfigInput = Partial<{
         }>;
         randomized_unique_identifiers: boolean;
         unnecessary_depth: boolean;
+        functionify: boolean;
     }>;
     options: Partial<{
         minify: boolean;
