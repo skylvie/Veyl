@@ -40,6 +40,7 @@ export function obfuscateLiterals(
         const stringDecoderName = names.freshIdentifier();
         const stringXorKey = crypto.randomInt(1, 256);
         const stringLiteralPaths: BabelNodePath[] = [];
+        const templateLiteralPaths: BabelNodePath[] = [];
 
         traverse(ast, {
             StringLiteral(pathNode: BabelNodePath) {
@@ -57,9 +58,25 @@ export function obfuscateLiterals(
 
                 stringLiteralPaths.push(pathNode);
             },
+            TemplateLiteral(pathNode: BabelNodePath) {
+                if (!pathNode.node) {
+                    return;
+                }
+
+                if (
+                    pathNode.parent?.type === "TaggedTemplateExpression" &&
+                    pathNode.key === "quasi"
+                ) {
+                    return;
+                }
+
+                templateLiteralPaths.push(pathNode);
+            },
         });
 
-        const encodedStringTable = new Array<string[]>(stringLiteralPaths.length * 2);
+        const templateStringParts = countTemplateStringParts(templateLiteralPaths);
+        const totalStringEntries = stringLiteralPaths.length + templateStringParts;
+        const encodedStringTable = new Array<string[]>(Math.max(totalStringEntries * 2, 1));
         const availableIndices = Array.from({ length: encodedStringTable.length }, (_, idx) => idx);
 
         for (let i = 0; i < encodedStringTable.length; i++) {
@@ -75,21 +92,33 @@ export function obfuscateLiterals(
                 continue;
             }
 
-            const pickAt = crypto.randomInt(0, availableIndices.length);
-            const tableIndex = availableIndices[pickAt];
-
-            availableIndices.splice(pickAt, 1);
-            encodedStringTable[tableIndex] = chunkEncodedString(
-                encodeStringLiteralValue(literalValue, stringXorKey)
-            );
-
             literalPath.replaceWith(
-                t.callExpression(t.identifier(stringDecoderName), [
-                    t.callExpression(t.identifier(stringAccessorName), [
-                        t.numericLiteral(tableIndex),
-                    ]),
-                ]) as unknown as BabelNode
+                buildStringDecoderCall(
+                    stringDecoderName,
+                    stringAccessorName,
+                    literalValue,
+                    stringXorKey,
+                    encodedStringTable,
+                    availableIndices
+                ) as unknown as BabelNode
             );
+        }
+
+        for (const templatePath of templateLiteralPaths) {
+            if (!templatePath.node || templatePath.node.type !== "TemplateLiteral") {
+                continue;
+            }
+
+            const replacement = buildTemplateLiteralReplacement(
+                templatePath.node as unknown as t.TemplateLiteral,
+                stringDecoderName,
+                stringAccessorName,
+                stringXorKey,
+                encodedStringTable,
+                availableIndices
+            );
+
+            templatePath.replaceWith(replacement as unknown as BabelNode);
         }
 
         runtimeOptions.strings = {
@@ -99,7 +128,7 @@ export function obfuscateLiterals(
             encodedTable: encodedStringTable,
             xorKey: stringXorKey,
         };
-        stringCount = stringLiteralPaths.length;
+        stringCount = totalStringEntries;
     }
 
     if (config.features.obfuscate.numbers) {
@@ -219,6 +248,88 @@ function chunkEncodedString(input: string): string[] {
     }
 
     return chunks;
+}
+
+function countTemplateStringParts(templateLiteralPaths: BabelNodePath[]): number {
+    let count = 0;
+
+    for (const templatePath of templateLiteralPaths) {
+        if (templatePath.node?.type !== "TemplateLiteral") {
+            continue;
+        }
+
+        count += (templatePath.node as unknown as t.TemplateLiteral).quasis.length;
+    }
+
+    return count;
+}
+
+function buildTemplateLiteralReplacement(
+    node: t.TemplateLiteral,
+    stringDecoderName: string,
+    stringAccessorName: string,
+    stringXorKey: number,
+    encodedStringTable: string[][],
+    availableIndices: number[]
+): t.Expression {
+    if (node.expressions.length === 0) {
+        return buildStringDecoderCall(
+            stringDecoderName,
+            stringAccessorName,
+            node.quasis[0]?.value.cooked ?? "",
+            stringXorKey,
+            encodedStringTable,
+            availableIndices
+        );
+    }
+
+    const parts: t.Expression[] = [];
+
+    for (let i = 0; i < node.quasis.length; i++) {
+        parts.push(
+            buildStringDecoderCall(
+                stringDecoderName,
+                stringAccessorName,
+                node.quasis[i]?.value.cooked ?? "",
+                stringXorKey,
+                encodedStringTable,
+                availableIndices
+            )
+        );
+
+        if (i < node.expressions.length) {
+            parts.push(node.expressions[i] as t.Expression);
+        }
+    }
+
+    let output = parts[0];
+
+    for (let i = 1; i < parts.length; i++) {
+        output = t.binaryExpression("+", output, parts[i]);
+    }
+
+    return output;
+}
+
+function buildStringDecoderCall(
+    stringDecoderName: string,
+    stringAccessorName: string,
+    literalValue: string,
+    stringXorKey: number,
+    encodedStringTable: string[][],
+    availableIndices: number[]
+): t.CallExpression {
+    const pickAt = crypto.randomInt(0, availableIndices.length);
+    const tableIndex = availableIndices[pickAt];
+
+    availableIndices.splice(pickAt, 1);
+    encodedStringTable[tableIndex] = chunkEncodedString(
+        encodeStringLiteralValue(literalValue, stringXorKey)
+    );
+
+    return t.callExpression(t.identifier(stringDecoderName), [
+        t.callExpression(t.identifier(stringAccessorName), [t.numericLiteral(tableIndex)]),
+    ]);
 }
 
 function pickNumberOperator(
