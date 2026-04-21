@@ -32,6 +32,7 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
             control_flow_flattening:
                 input?.features?.control_flow_flattening ??
                 DEFAULT_OBFUSCATION_CONFIG.features.control_flow_flattening,
+            simplify: input?.features?.simplify ?? DEFAULT_OBFUSCATION_CONFIG.features.simplify,
             functionify:
                 input?.features?.functionify ?? DEFAULT_OBFUSCATION_CONFIG.features.functionify,
         },
@@ -79,6 +80,7 @@ export function mergeConfig(
             control_flow_flattening:
                 override.features?.control_flow_flattening ??
                 base.features?.control_flow_flattening,
+            simplify: override.features?.simplify ?? base.features?.simplify,
             functionify: override.features?.functionify ?? base.features?.functionify,
         },
         options: {
@@ -92,6 +94,7 @@ function validateConfig(config: ObfuscationConfig): void {
     const functionify = config.features.functionify;
     const deadCodeInjection = config.features.dead_code_injection;
     const controlFlowFlattening = config.features.control_flow_flattening;
+    const simplify = config.features.simplify;
     const minify = config.options.minify;
     const booleanNumber = config.options.boolean_number;
     const numberOffset = config.options.number_offset;
@@ -111,6 +114,10 @@ function validateConfig(config: ObfuscationConfig): void {
 
     if (typeof controlFlowFlattening !== "boolean") {
         throw new Error("features.control_flow_flattening must be true or false");
+    }
+
+    if (typeof simplify !== "boolean") {
+        throw new Error("features.simplify must be true or false");
     }
 
     if (typeof minify !== "boolean") {

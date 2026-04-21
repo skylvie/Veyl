@@ -25,6 +25,8 @@ export interface ObfuscationConfig {
         dead_code_injection: boolean;
         /** Restructure eligible statement sequences into dispatcher-driven state machines when true. */
         control_flow_flattening: boolean;
+        /** Apply compacting source-to-source rewrites such as merged declarations and conditional returns. */
+        simplify: boolean;
         /** Wrap the transformed program body in `new Function(...)` when true. */
         functionify: boolean;
     };
@@ -58,6 +60,7 @@ export type ObfuscationConfigInput = Partial<{
         unnecessary_depth: boolean;
         dead_code_injection: boolean;
         control_flow_flattening: boolean;
+        simplify: boolean;
         functionify: boolean;
     }>;
     options: Partial<{
