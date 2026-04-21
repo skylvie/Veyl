@@ -1,4 +1,5 @@
-import type { NumberObfuscationOperator, ObfuscationConfig, ObfuscationStats } from "@skylvi/veyl";
+import type { ObfuscationConfig } from "@skylvi/veyl-config";
+import type { NumberObfuscationOperator, ObfuscationStats } from "@skylvi/veyl";
 import type { CliOptions } from "../types/cli.js";
 import type { CliLogger } from "../types/logger.js";
 import { color } from "../utils/color.js";
@@ -46,14 +47,24 @@ function printConfigSummary(
 ): void {
     logger.debug(`${color.bold("Config")}\n`);
     logger.debug(`  log level:                      ${config.log_level}\n`);
+    logger.debug(`  minify:                         ${formatBoolean(config.minify)}\n`);
     logger.debug(
-        `  obfuscated strings:             ${formatBoolean(config.features.obfuscate.strings)}\n`
+        `  string obfuscation:             ${formatBoolean(config.obfuscate.strings.enabled)}\n`
     );
     logger.debug(
-        `  obfuscated numbers:             ${formatBoolean(config.features.obfuscate.numbers)}\n`
+        `  string encoding:                ${formatBoolean(config.obfuscate.strings.encode)}\n`
     );
     logger.debug(
-        `  obfuscated booleans:            ${formatBoolean(config.features.obfuscate.booleans)}\n`
+        `  string method:                  ${config.obfuscate.strings.method}\n`
+    );
+    logger.debug(
+        `  string split length:            ${config.obfuscate.strings.split_length}\n`
+    );
+    logger.debug(
+        `  number obfuscation:             ${formatBoolean(config.obfuscate.numbers.enabled)}\n`
+    );
+    logger.debug(
+        `  boolean obfuscation:            ${formatBoolean(config.obfuscate.booleans.enabled)}\n`
     );
     logger.debug(
         `  randomized unique identifiers:  ${formatBoolean(config.features.randomized_unique_identifiers)}\n`
@@ -68,18 +79,14 @@ function printConfigSummary(
         `  control flow flattening:        ${formatBoolean(config.features.control_flow_flattening)}\n`
     );
     logger.debug(`  simplify:                       ${formatBoolean(config.features.simplify)}\n`);
-    logger.debug(`  string method:                  ${config.options.string_method}\n`);
     logger.debug(
-        `  string split length:            ${config.options.string_split_length}\n`
+        `  number offset:                  ${formatOptionalNumber(stats.numberObfuscationOffset)}\n`
     );
     logger.debug(
-        `  boolean obfuscation number:     ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n`
+        `  number operator family:         ${formatNumberOperators(stats.numberObfuscationOperators)}\n`
     );
     logger.debug(
-        `  number obfuscation offset:      ${formatOptionalNumber(stats.numberObfuscationOffset)}\n`
-    );
-    logger.debug(
-        `  number obfuscation operator:    ${formatNumberOperators(stats.numberObfuscationOperators)}\n\n`
+        `  boolean number:                 ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n\n`
     );
 }
 

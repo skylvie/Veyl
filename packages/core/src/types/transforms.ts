@@ -1,6 +1,6 @@
 import type * as t from "@babel/types";
+import type { NumberObfuscationOperator } from "@skylvi/veyl-config";
 import type { BabelNode, PropKeyNode } from "./babel.js";
-import type { NumberObfuscationOperator } from "./config.js";
 import type { RuntimeHelperOptions } from "./runtime.js";
 
 export interface LiteralObfuscationResult {

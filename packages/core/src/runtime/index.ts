@@ -24,14 +24,19 @@ export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[
                 ...buildStringTableRuntimeHelpers(
                     options.strings.tableName,
                     options.strings.accessorName,
-                    options.strings.encodedTable
+                    options.strings.decoderName,
+                    options.strings.encodedTable,
+                    options.strings.orderTable ?? [],
+                    options.strings.encode
                 )
             );
         }
 
-        statements.push(
-            ...buildStringRuntimeHelpers(options.strings.decoderName, options.strings.xorKey)
-        );
+        if (options.strings.encode) {
+            statements.push(
+                ...buildStringRuntimeHelpers(options.strings.decoderName, options.strings.xorKey)
+            );
+        }
     }
 
     if (options.numbers !== undefined) {

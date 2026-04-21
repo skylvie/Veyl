@@ -3,8 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import * as babelParser from "@babel/parser";
 import * as t from "@babel/types";
+import { resolveConfig } from "@skylvi/veyl-config";
+import type { ObfuscationConfigInput, StringObfuscationMethod } from "@skylvi/veyl-config";
 import { generate } from "../babel/interop.js";
-import { resolveConfig } from "../config/index.js";
 import { buildRuntimeHelpers, insertHelperStatements } from "../runtime/index.js";
 import { flattenControlFlow } from "../transforms/controlFlowFlattening.js";
 import { injectDeadCode } from "../transforms/deadCodeInjector.js";
@@ -13,7 +14,6 @@ import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";
 import { simplifyStatements } from "../transforms/simplifier.js";
 import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
-import type { ObfuscationConfigInput, StringObfuscationMethod } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
 import type { RuntimeHelperOptions } from "../types/runtime.js";
 import { encodeStringLiteralValue, NameGenerator } from "../utils/random.js";
@@ -33,7 +33,7 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
 
     const bundle = await bundleInput(input);
     const transformed = obfuscateCode(bundle.code, config);
-    const outputCode = config.options.minify
+    const outputCode = config.minify
         ? await compactOutput(transformed.code, !config.features.randomized_unique_identifiers)
         : transformed.code;
 
@@ -138,7 +138,15 @@ function functionifyProgram(
     ast: object,
     names: NameGenerator,
     runtimeOptions: RuntimeHelperOptions,
-    config: { options: { string_method: StringObfuscationMethod; string_split_length: number } }
+    config: {
+        obfuscate: {
+            strings: {
+                method: StringObfuscationMethod;
+                split_length: number;
+                encode: boolean;
+            };
+        };
+    }
 ): void {
     const program = (ast as { program?: { body?: t.Statement[] } }).program;
 
@@ -167,11 +175,11 @@ function functionifyProgram(
         comments: false,
         compact: false,
     }).code;
+    const bodyStringExpression = addFunctionifiedBodyString(runtimeOptions, names, bodyCode, config);
     const functionParamNames = [
         ...collectTopLevelBindingNames(imports),
         ...collectRuntimeBindingNames(runtimeOptions),
     ];
-    const bodyStringExpression = addFunctionifiedBodyString(runtimeOptions, names, bodyCode, config);
     const functionCall = t.expressionStatement(
         t.callExpression(
             t.newExpression(t.identifier("Function"), [
@@ -221,7 +229,9 @@ function collectRuntimeBindingNames(runtimeOptions: RuntimeHelperOptions): strin
     const names: string[] = [];
 
     if (runtimeOptions.strings !== undefined) {
-        names.push(runtimeOptions.strings.decoderName);
+        if (runtimeOptions.strings.encode) {
+            names.push(runtimeOptions.strings.decoderName);
+        }
 
         if (runtimeOptions.strings.tableName !== undefined) {
             names.push(runtimeOptions.strings.tableName);
@@ -247,19 +257,29 @@ function addFunctionifiedBodyString(
     runtimeOptions: RuntimeHelperOptions,
     names: NameGenerator,
     bodyCode: string,
-    config: { options: { string_method: StringObfuscationMethod; string_split_length: number } }
+    config: {
+        obfuscate: {
+            strings: {
+                method: StringObfuscationMethod;
+                split_length: number;
+                encode: boolean;
+            };
+        };
+    }
 ): t.Expression {
     if (runtimeOptions.strings === undefined) {
         runtimeOptions.strings = {
-            method: config.options.string_method,
+            method: config.obfuscate.strings.method,
             decoderName: names.freshIdentifier(),
+            encode: config.obfuscate.strings.encode,
             xorKey: crypto.randomInt(1, 256),
         };
 
-        if (config.options.string_method === "array") {
+        if (config.obfuscate.strings.method === "array") {
             runtimeOptions.strings.tableName = names.freshIdentifier();
             runtimeOptions.strings.accessorName = names.freshIdentifier();
             runtimeOptions.strings.encodedTable = [];
+            runtimeOptions.strings.orderTable = [];
         }
     }
 
@@ -268,28 +288,39 @@ function addFunctionifiedBodyString(
             runtimeOptions.strings.decoderName,
             bodyCode,
             runtimeOptions.strings.xorKey,
-            config.options.string_split_length
+            config.obfuscate.strings.split_length,
+            runtimeOptions.strings.encode
         );
     }
 
     if (
         runtimeOptions.strings.accessorName === undefined ||
-        runtimeOptions.strings.encodedTable === undefined
+        runtimeOptions.strings.encodedTable === undefined ||
+        runtimeOptions.strings.orderTable === undefined
     ) {
         throw new Error("array string obfuscation requires string table state");
     }
 
-    const tableIndex = runtimeOptions.strings.encodedTable.length;
+    const stringRuntime = runtimeOptions.strings;
+    const encodedTable = stringRuntime.encodedTable!;
+    const orderTable = stringRuntime.orderTable!;
+    const accessorName = stringRuntime.accessorName!;
+    const tableIndex = encodedTable.length;
+    const shuffledParts = shuffleStringParts(splitStringForArrayTable(bodyCode));
 
-    runtimeOptions.strings.encodedTable.push(
-        chunkEncodedString(encodeStringLiteralValue(bodyCode, runtimeOptions.strings.xorKey))
+    encodedTable.push(
+        shuffledParts.parts.map((part) =>
+            stringRuntime.encode
+                ? encodeStringLiteralValue(part, stringRuntime.xorKey)
+                : part
+        )
     );
+    orderTable.push(shuffledParts.order);
 
-    return t.callExpression(t.identifier(runtimeOptions.strings.decoderName), [
-        t.callExpression(t.identifier(runtimeOptions.strings.accessorName), [
-            t.numericLiteral(tableIndex),
-        ]),
+    const accessorCall = t.callExpression(t.identifier(accessorName), [
+        t.numericLiteral(tableIndex),
     ]);
+    return accessorCall;
 }
 
 function collectPatternBindingNames(pattern: t.Node, names: string[]): void {
@@ -332,30 +363,19 @@ function collectPatternBindingNames(pattern: t.Node, names: string[]): void {
     }
 }
 
-function chunkEncodedString(input: string): string[] {
-    if (input.length === 0) {
-        return [""];
-    }
-
-    const chunks: string[] = [];
-
-    for (let i = 0; i < input.length; i += 3) {
-        chunks.push(input.slice(i, i + 3));
-    }
-
-    return chunks;
-}
-
 function buildSplitStringExpression(
     stringDecoderName: string,
     literalValue: string,
     stringXorKey: number,
-    stringSplitLength: number
+    stringSplitLength: number,
+    encode: boolean
 ): t.Expression {
     const parts = splitPlainString(literalValue, stringSplitLength).map((chunk) =>
-        t.callExpression(t.identifier(stringDecoderName), [
-            t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
-        ])
+        encode
+            ? t.callExpression(t.identifier(stringDecoderName), [
+                  t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
+              ])
+            : t.stringLiteral(chunk)
     );
 
     let output: t.Expression = parts[0] ?? t.stringLiteral("");
@@ -379,4 +399,24 @@ function splitPlainString(input: string, splitLength: number): string[] {
     }
 
     return chunks;
+}
+
+function splitStringForArrayTable(input: string): string[] {
+    return input.split(" ");
+}
+
+function shuffleStringParts(parts: string[]): { parts: string[]; order: number[] } {
+    const shuffled = parts.map((value, index) => ({ value, index }));
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const pickAt = crypto.randomInt(0, i + 1);
+        const current = shuffled[i];
+        shuffled[i] = shuffled[pickAt] as { value: string; index: number };
+        shuffled[pickAt] = current as { value: string; index: number };
+    }
+
+    return {
+        parts: shuffled.map((entry) => entry.value),
+        order: shuffled.map((entry) => entry.index),
+    };
 }

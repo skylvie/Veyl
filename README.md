@@ -37,26 +37,31 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 ```jsonc
 {
 	"log_level": "info",
-	"features": {
-		"obfuscate": {
-			"strings": true, // Do string obfuscation
-			"numbers": true, // Do number obfuscation
-			"booleans": true // Do boolean obfuscation
+	"minify": true,
+	"obfuscate": {
+		"strings": {
+			"enabled": true, // Do string obfuscation
+			"encode": true, // Encode string chunks before runtime decode
+			"method": "array", // "array" or "split"
+			"split_length": 3 // Chunk length when using split string obfuscation
 		},
+		"numbers": {
+			"enabled": true, // Do number obfuscation
+			"offset": null, // Number offset or "randomized"/null
+			"operator": null // "+-", "*/", or "randomized"/null
+		},
+		"booleans": {
+			"enabled": true, // Do boolean obfuscation
+			"number": null // Number token or "randomized"/null
+		}
+	},
+	"features": {
 		"randomized_unique_identifiers": true, // Randomize identifiers (e.g. `_0x1a2b3c`)
 		"unnecessary_depth": false, // Add "unnecessary" depth (explained in "How It Works" section)
 		"dead_code_injection": false, // Insert unreachable decoy code blocks
 		"control_flow_flattening": false, // Flatten eligible statement runs into a state machine
 		"simplify": false, // Apply compacting rewrites such as merged declarations and conditional returns
 		"functionify": false // Run the final program body through `new Function(...)`
-	},
-	"options": { // Leave these as "randomized" or `null` to use random values
-		"minify": true, // Run the final esbuild minify pass
-		"string_method": "array", // String obfuscation strategy ("array" or "split")
-		"string_split_length": 3, // Chunk length when using split string obfuscation
-		"boolean_number": 120, // Number to use as boolean representation
-		"number_offset": 12, // Number to use as offset
-		"number_operator": "+" // Number operator to use as offset (+, -, *, /)
 	}
 }
 ```
@@ -70,20 +75,21 @@ Log levels:
 ### CLI Flags
 You can also use CLI flags instead:
 ```
---obfuscated-strings=true|false
---obfuscated-numbers=true|false
---obfuscated-booleans=true|false
+--strings-enabled=true|false
+--strings-encode=true|false
+--strings-method=array|split
+--strings-split-length=<num>
+--numbers-enabled=true|false
+--numbers-offset=<num|randomized>
+--numbers-operator=+-|*/|randomized
+--booleans-enabled=true|false
+--booleans-number=<num|randomized>
 --randomized-unique-identifiers=true|false
 --minify=true|false
 --functionify=true|false
 --dead-code-injection=true|false
 --control-flow-flattening=true|false
 --simplify=true|false
---string-method=array|split
---string-split-length=<num>
---number-obfuscation-offset=<num|randomized>
---number-obfuscation-operator=<+|-|*|/|randomized>
---boolean-obfuscation-number=<num|randomized>
 --unnecessary-depth=true|false
 --log-level=none|error|info|debug
 ```
@@ -110,26 +116,31 @@ const stats = await obfuscateFile({
     input: "./src/index.ts",
     output: "./dist/index.obfuscated.js",
     config: {
-        features: {
-            obfuscate: {
-                strings: true,
-                numbers: true,
-                booleans: true,
+        minify: true,
+        obfuscate: {
+            strings: {
+                enabled: true,
+                encode: true,
+                method: "array",
+                split_length: 3,
             },
+            numbers: {
+                enabled: true,
+                offset: null,
+                operator: null,
+            },
+            booleans: {
+                enabled: true,
+                number: null,
+            },
+        },
+        features: {
             randomized_unique_identifiers: true,
             unnecessary_depth: false,
             functionify: false,
             dead_code_injection: false,
             control_flow_flattening: false,
             simplify: false,
-        },
-        options: {
-            minify: true,
-            string_method: "array",
-            string_split_length: 3,
-            boolean_number: null,
-            number_offset: null,
-            number_operator: null,
         },
     },
 });
@@ -142,12 +153,19 @@ console.log(stats.output, stats.outputBytes);
 import { obfuscateCode } from "@skylvi/veyl";
 
 const result = obfuscateCode("const answer = 42; console.log(answer);", {
-    features: {
-        obfuscate: {
-            strings: false,
-            numbers: true,
-            booleans: true,
+    obfuscate: {
+        strings: {
+            enabled: false,
         },
+        numbers: {
+            enabled: true,
+        },
+        booleans: {
+            enabled: true,
+        },
+    },
+    features: {
+        randomized_unique_identifiers: true,
     },
 });
 
@@ -166,7 +184,6 @@ console.log(result.code);
 
 ## TODO
 ### Core Obfuscation Features
-- [ ] Encode config option (disable encoding)
 - [ ] Expression option (`1*2/4+4-5`) for number obfuscation
 - [ ] Boolean obfuscation option for `true` -> `!![]` and `false` -> `![]`
     - [ ] Randomized depth? (e.g. `!!!!!![]`)
@@ -188,7 +205,6 @@ console.log(result.code);
 
 ### Other
 - [ ] Webapp Demo
-- [ ] Seperate config parser into seperate package
 - [ ] Anti debug gets its own package
 - [ ] Update test suite
 
@@ -223,6 +239,7 @@ pnpm typecheck # TypeScript only
 ## Workspace Layout
 ```text
 packages/
+  config/ # local config parsing/resolution package
   core/  # @skylvi/veyl API package
   cli/   # @skylvi/veyl-cli executable package
 ```
@@ -238,12 +255,12 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Dead code injection can insert unreachable decoy control flow and computations so the transformed program looks busier than the logic it actually executes.
 - Control flow flattening can rewrite eligible straight-line statement runs into a randomized dispatcher loop so the original execution order is hidden behind a state machine.
 - Simplify can merge declarations and expression chains, compact `if/else` returns into conditional expressions, and fold expression tails into comma-expression returns.
-- String literals are encoded with base64, bit rotation, and XOR, then decoded at runtime. `options.string_method: "array"` stores them in a randomized string table, while `"split"` emits inline concatenated decoded chunks.
+- String literals can be obfuscated through either a randomized string table or inline split concatenation. When `obfuscate.strings.encode` is enabled, chunks are encoded with base64, bit rotation, and XOR before runtime decode.
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
 - When `features.functionify` is enabled, Veyl stringifies the transformed program body, obfuscates that body string, and executes it through `new Function(...)` while passing imported bindings and helper functions in as runtime arguments.
 
-Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. By default, esbuild minifies the transformed JS while preserving the randomized identifiers, but you can disable that final minify step with `options.minify` or `--minify=false`.
+Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode or access them. It then runs another binding rename pass so the helper names are obfuscated too. By default, esbuild minifies the transformed JS while preserving the randomized identifiers, but you can disable that final minify step with `minify` or `--minify=false`.
 
 ## AP CSP Create Task Evidence
 > [!NOTE]

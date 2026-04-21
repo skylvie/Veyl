@@ -1,4 +1,4 @@
-import type { NumberObfuscationOperator, ObfuscationConfigInput } from "./config.js";
+import type { NumberObfuscationOperator, ObfuscationConfigInput } from "@skylvi/veyl-config";
 
 /** Result from Veyl's internal esbuild bundling step. */
 export interface BundleResult {
