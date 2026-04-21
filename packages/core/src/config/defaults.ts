@@ -21,6 +21,8 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
     },
     options: {
         minify: true,
+        string_method: "array",
+        string_split_length: 3,
         boolean_number: null,
         number_offset: null,
         number_operator: null,

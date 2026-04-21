@@ -68,6 +68,10 @@ function printConfigSummary(
         `  control flow flattening:        ${formatBoolean(config.features.control_flow_flattening)}\n`
     );
     logger.debug(`  simplify:                       ${formatBoolean(config.features.simplify)}\n`);
+    logger.debug(`  string method:                  ${config.options.string_method}\n`);
+    logger.debug(
+        `  string split length:            ${config.options.string_split_length}\n`
+    );
     logger.debug(
         `  boolean obfuscation number:     ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n`
     );

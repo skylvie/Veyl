@@ -1,40 +1,9 @@
 import * as t from "@babel/types";
 
 export function buildStringRuntimeHelpers(
-    stringTableName: string,
-    stringAccessorName: string,
     stringDecoderName: string,
-    encodedTable: string[][],
     stringXorKey: number
 ): t.Statement[] {
-    const tableElements = encodedTable.map((chunks) =>
-        t.arrayExpression(chunks.map((value) => t.stringLiteral(value)))
-    );
-
-    const stringTableDeclaration = t.variableDeclaration("const", [
-        t.variableDeclarator(t.identifier(stringTableName), t.arrayExpression(tableElements)),
-    ]);
-
-    const stringAccessorFn = t.functionDeclaration(
-        t.identifier(stringAccessorName),
-        [t.identifier("index")],
-        t.blockStatement([
-            t.returnStatement(
-                t.callExpression(
-                    t.memberExpression(
-                        t.memberExpression(
-                            t.identifier(stringTableName),
-                            t.identifier("index"),
-                            true
-                        ),
-                        t.identifier("join")
-                    ),
-                    [t.stringLiteral("")]
-                )
-            ),
-        ])
-    );
-
     const stringDecoderFn = t.functionDeclaration(
         t.identifier(stringDecoderName),
         [t.identifier("inp")],
@@ -253,5 +222,41 @@ export function buildStringRuntimeHelpers(
         ])
     );
 
-    return [stringTableDeclaration, stringAccessorFn, stringDecoderFn];
+    return [stringDecoderFn];
+}
+
+export function buildStringTableRuntimeHelpers(
+    stringTableName: string,
+    stringAccessorName: string,
+    encodedTable: string[][]
+): t.Statement[] {
+    const tableElements = encodedTable.map((chunks) =>
+        t.arrayExpression(chunks.map((value) => t.stringLiteral(value)))
+    );
+
+    const stringTableDeclaration = t.variableDeclaration("const", [
+        t.variableDeclarator(t.identifier(stringTableName), t.arrayExpression(tableElements)),
+    ]);
+
+    const stringAccessorFn = t.functionDeclaration(
+        t.identifier(stringAccessorName),
+        [t.identifier("index")],
+        t.blockStatement([
+            t.returnStatement(
+                t.callExpression(
+                    t.memberExpression(
+                        t.memberExpression(
+                            t.identifier(stringTableName),
+                            t.identifier("index"),
+                            true
+                        ),
+                        t.identifier("join")
+                    ),
+                    [t.stringLiteral("")]
+                )
+            ),
+        ])
+    );
+
+    return [stringTableDeclaration, stringAccessorFn];
 }

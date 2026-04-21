@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { LogLevel, NumberObfuscationOperator } from "@skylvi/veyl";
+import type { LogLevel, NumberObfuscationOperator, StringObfuscationMethod } from "@skylvi/veyl";
 import { DEFAULT_CONFIG_FILE, mergeConfig } from "@skylvi/veyl";
 import { Command, InvalidArgumentError, Option } from "commander";
 import type { CliOptions } from "../types/cli.js";
@@ -78,6 +78,20 @@ export function buildCliProgram(versionText: string): Command {
                 "--simplify <true|false>",
                 "Apply compacting rewrites such as merged declarations and conditional returns."
             ).argParser((value: string) => parseBoolean(value, "--simplify"))
+        )
+        .addOption(
+            new Option(
+                "--string-method, --string_method <array|split>",
+                "String obfuscation method."
+            ).argParser((value: string) => parseStringMethod(value, "--string-method"))
+        )
+        .addOption(
+            new Option(
+                "--string-split-length, --string_split_length <num>",
+                "Chunk length used by split string obfuscation."
+            ).argParser((value: string) =>
+                parsePositiveInteger(value, "--string-split-length")
+            )
         )
         .addOption(
             new Option(
@@ -193,6 +207,12 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         "control_flow_flattening"
     ) as boolean | undefined;
     const simplify = readAliasedOption(parsed, "simplify", "simplify") as boolean | undefined;
+    const stringMethod = readAliasedOption(parsed, "stringMethod", "string_method") as
+        | StringObfuscationMethod
+        | undefined;
+    const stringSplitLength = readAliasedOption(parsed, "stringSplitLength", "string_split_length") as
+        | number
+        | undefined;
     const numberObfuscationOffset = readAliasedOption(
         parsed,
         "numberObfuscationOffset",
@@ -280,6 +300,22 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         });
     }
 
+    if (stringMethod !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                string_method: stringMethod,
+            },
+        });
+    }
+
+    if (stringSplitLength !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            options: {
+                string_split_length: stringSplitLength,
+            },
+        });
+    }
+
     if (numberObfuscationOffset !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
             options: {
@@ -362,6 +398,16 @@ function parseNumberOrRandomized(value: string, flag: string): number | null {
     return parsed;
 }
 
+function parsePositiveInteger(value: string, flag: string): number {
+    const parsed = Number(value);
+
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new InvalidArgumentError(`${flag} must be a positive integer`);
+    }
+
+    return parsed;
+}
+
 function parseNumberOperator(value: string, flag: string): NumberObfuscationOperator | null {
     if (value === "randomized") {
         return null;
@@ -372,6 +418,14 @@ function parseNumberOperator(value: string, flag: string): NumberObfuscationOper
     }
 
     throw new InvalidArgumentError(`${flag} must be one of +, -, *, /, or randomized`);
+}
+
+function parseStringMethod(value: string, flag: string): StringObfuscationMethod {
+    if (value === "array" || value === "split") {
+        return value;
+    }
+
+    throw new InvalidArgumentError(`${flag} must be array or split`);
 }
 
 function parseLogLevel(value: string, flag: string): LogLevel {
@@ -395,6 +449,8 @@ interface CommanderCliOptions {
     deadCodeInjection?: boolean;
     controlFlowFlattening?: boolean;
     simplify?: boolean;
+    stringMethod?: StringObfuscationMethod;
+    stringSplitLength?: number;
     numberObfuscationOffset?: number | null;
     numberObfuscationOperator?: NumberObfuscationOperator | null;
     booleanObfuscationNumber?: number | null;

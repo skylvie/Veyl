@@ -15,6 +15,7 @@ export type {
     NumberObfuscationOperator,
     ObfuscationConfig,
     ObfuscationConfigInput,
+    StringObfuscationMethod,
 } from "./types/config.js";
 export type {
     ObfuscateCodeResult,
