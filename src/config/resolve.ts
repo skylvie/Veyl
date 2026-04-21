@@ -27,8 +27,7 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
                 input?.features?.unnecessary_depth ??
                 DEFAULT_OBFUSCATION_CONFIG.features.unnecessary_depth,
             functionify:
-                input?.features?.functionify ??
-                DEFAULT_OBFUSCATION_CONFIG.features.functionify,
+                input?.features?.functionify ?? DEFAULT_OBFUSCATION_CONFIG.features.functionify,
         },
         options: {
             minify: input?.options?.minify ?? DEFAULT_OBFUSCATION_CONFIG.options.minify,

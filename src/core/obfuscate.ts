@@ -13,8 +13,7 @@ import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
 import type { ObfuscationConfigInput } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
 import type { RuntimeHelperOptions } from "../types/runtime.js";
-import { NameGenerator } from "../utils/random.js";
-import { encodeStringLiteralValue } from "../utils/random.js";
+import { encodeStringLiteralValue, NameGenerator } from "../utils/random.js";
 import { bundleInput, compactOutput } from "./bundler.js";
 
 /**

@@ -165,6 +165,11 @@ chmod +x ./run.sh
 ./run.sh --rm-js # Remove JS files
 ```
 
+## TODO
+- [ ] Fake sourcemap generation
+- [ ] Deadcode injection
+- [ ] Monorepoify
+
 ## Formatting and Linting
 Veyl uses [Biome](https://biomejs.dev/) for formatting, import organization, and linting.
 
