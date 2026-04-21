@@ -1,4 +1,4 @@
-import type { ObfuscationConfigInput } from "./config.js";
+import type { ObfuscationConfigInput } from "@skylvi/veyl";
 
 export interface CliOptions {
     input: string;

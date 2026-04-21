@@ -1,8 +1,8 @@
 import path from "node:path";
-import chalk from "chalk";
-import { mergeConfig } from "../config/index.js";
+import type { LogLevel, NumberObfuscationOperator } from "@skylvi/veyl";
+import { mergeConfig } from "@skylvi/veyl";
 import type { CliOptions } from "../types/cli.js";
-import type { LogLevel, NumberObfuscationOperator } from "../types/config.js";
+import { color } from "../utils/color.js";
 import { OPTION_DEFINITIONS } from "./definitions.js";
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -80,15 +80,15 @@ export function resolveCliPaths(options: CliOptions, cwd: string): CliOptions {
 
 export function buildHelpText(commandName: string): string {
     const lines = [
-        `${chalk.bold("Usage:")} ${chalk.cyan(commandName)} -i ./input.ts -o ./output.js`,
+        `${color.bold("Usage:")} ${color.cyan(commandName)} -i ./input.ts -o ./output.js`,
         "",
-        chalk.bold("Options:"),
+        color.bold("Options:"),
     ];
 
     for (const option of OPTION_DEFINITIONS) {
-        const flagText = chalk.green((option.helpFlags ?? option.flags).join(", "));
+        const flagText = color.green((option.helpFlags ?? option.flags).join(", "));
         const valueText =
-            option.valueName === undefined ? "" : chalk.gray(` <${option.valueName}>`);
+            option.valueName === undefined ? "" : color.gray(` <${option.valueName}>`);
 
         lines.push(`  ${flagText}${valueText}  ${option.description}`);
     }

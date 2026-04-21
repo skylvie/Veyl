@@ -3,7 +3,7 @@ A standalone TS/JS obfuscator made for my AP CSP create task.
 
 ## Installation
 ```sh
-pnpm i -g @skylvi/veyl
+pnpm i -g @skylvi/veyl-cli
 ```
 
 ### Install From Source
@@ -21,12 +21,12 @@ pnpm build
 
 3. Run it!
 ```sh
-node dist/cli.js -i ./input.ts -o ./output.js
+node packages/cli/dist/cli.js -i ./input.ts -o ./output.js
 ```
 
 4. Optional: link the CLI command
 ```sh
-pnpm link --global
+pnpm --filter @skylvi/veyl-cli link --global
 veyl -i ./input.ts -o ./output.js
 ```
 
@@ -168,17 +168,24 @@ chmod +x ./run.sh
 ## TODO
 - [ ] Fake sourcemap generation
 - [ ] Deadcode injection
-- [ ] Monorepoify
+- [ ] `Commander` over Diy CLI parser
 
 ## Formatting and Linting
 Veyl uses [Biome](https://biomejs.dev/) for formatting, import organization, and linting.
 
 ```sh
 pnpm lint      # Lint src
-pnpm lint:fix  # Apply lint fixes in src
-pnpm format    # Format src
-pnpm check     # Apply Biome safe fixes and checks in src
+pnpm lint:fix  # Apply lint fixes in packages
+pnpm format    # Format packages
+pnpm check     # Apply Biome safe fixes and checks in packages
 pnpm typecheck # TypeScript only
+```
+
+## Workspace Layout
+```text
+packages/
+  core/  # @skylvi/veyl API package
+  cli/   # @skylvi/veyl-cli executable package
 ```
 
 ## How It Works

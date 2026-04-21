@@ -7,11 +7,6 @@ export type {
     TraverseFn,
 } from "./babel.js";
 export type {
-    CliOptionDefinition,
-    CliOptions,
-    LoadedConfig,
-} from "./cli.js";
-export type {
     LogLevel,
     NumberObfuscationOperator,
     ObfuscationConfig,
@@ -23,8 +18,6 @@ export type {
     ObfuscateFileOptions,
     ObfuscationStats,
 } from "./core.js";
-
-export type { CliLogger } from "./logger.js";
 
 export type { RuntimeHelperOptions } from "./runtime.js";
 

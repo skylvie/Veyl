@@ -1,4 +1,4 @@
-import type { LogLevel } from "../types/config.js";
+import type { LogLevel } from "@skylvi/veyl";
 import type { CliLogger } from "../types/logger.js";
 
 export function createLogger(logLevel: LogLevel): CliLogger {

@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG_FILE } from "../config/index.js";
+import { DEFAULT_CONFIG_FILE } from "@skylvi/veyl";
 import type { CliOptionDefinition } from "../types/cli.js";
 
 export const OPTION_DEFINITIONS: CliOptionDefinition[] = [
