@@ -27,19 +27,18 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
 
     const bundle = await bundleInput(input);
     const transformed = obfuscateCode(bundle.code, config);
-    const compacted = await compactOutput(
-        transformed.code,
-        !config.features.randomized_unique_identifiers
-    );
+    const outputCode = config.options.minify
+        ? await compactOutput(transformed.code, !config.features.randomized_unique_identifiers)
+        : transformed.code;
 
     fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, compacted, "utf-8");
+    fs.writeFileSync(output, outputCode, "utf-8");
 
     return {
         input,
         output,
         bundledBytes: bundle.bytes,
-        outputBytes: compacted.length,
+        outputBytes: outputCode.length,
         renamedBindings: transformed.renamedBindings,
         renamedProperties: transformed.renamedProperties,
         addedDepthReferences: transformed.addedDepthReferences,

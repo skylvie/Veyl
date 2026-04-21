@@ -66,6 +66,14 @@ const OPTION_DEFINITIONS: CliOptionDefinition[] = [
         description: "Use Veyl randomized names instead of esbuild minified identifiers.",
     },
     {
+        flags: ["--minify"],
+        target: "minify",
+        takesValue: true,
+        valueName: "true|false",
+        required: false,
+        description: "Enable or disable the final esbuild minify step.",
+    },
+    {
         flags: ["--number-obfuscation-offset", "--number_obfuscation_offset"],
         helpFlags: ["--number-obfuscation-offset"],
         target: "numberObfuscationOffset",
@@ -285,6 +293,13 @@ function assignCliValue(options: CliOptions, target: string, value: string): voi
                         value,
                         "--randomized-unique-identifiers"
                     ),
+                },
+            });
+            return;
+        case "minify":
+            options.configOverrides = mergeConfig(options.configOverrides, {
+                options: {
+                    minify: parseBoolean(value, "--minify"),
                 },
             });
             return;

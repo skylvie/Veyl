@@ -47,6 +47,7 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 		"unnecessary_depth": true // Add "unnecessary" depth (explained in "How It Works" section)
 	},
 	"options": { // Leave these as "randomized" or `null` to use random values
+		"minify": true, // Run the final esbuild minify pass
 		"boolean_number": 120, // Number to use as boolean representation
 		"number_offset": 12, // Number to use as offset
 		"number_operator": "+" // Number operator to use as offset (+, -, *, /)
@@ -67,6 +68,7 @@ You can also use CLI flags instead:
 --obfuscated-numbers=true|false
 --obfuscated-booleans=true|false
 --randomized-unique-identifiers=true|false
+--minify=true|false
 --number-obfuscation-offset=<num|randomized>
 --number-obfuscation-operator=<+|-|*|/|randomized>
 --boolean-obfuscation-number=<num|randomized>
@@ -106,6 +108,7 @@ const stats = await obfuscateFile({
             unnecessary_depth: true,
         },
         options: {
+            minify: true,
             boolean_number: null,
             number_offset: null,
             number_operator: null,
@@ -183,7 +186,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
 
-Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. Finally, esbuild minifies the transformed JS while preserving the randomized identifiers.
+Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. By default, esbuild minifies the transformed JS while preserving the randomized identifiers, but you can disable that final minify step with `options.minify` or `--minify=false`.
 
 ## AP CSP Create Task Evidence
 The code includes the required elements:

@@ -28,6 +28,7 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
                 DEFAULT_OBFUSCATION_CONFIG.features.unnecessary_depth,
         },
         options: {
+            minify: input?.options?.minify ?? DEFAULT_OBFUSCATION_CONFIG.options.minify,
             boolean_number:
                 input?.options?.boolean_number ?? DEFAULT_OBFUSCATION_CONFIG.options.boolean_number,
             number_offset:
@@ -74,12 +75,17 @@ export function mergeConfig(
 }
 
 function validateConfig(config: ObfuscationConfig): void {
+    const minify = config.options.minify;
     const booleanNumber = config.options.boolean_number;
     const numberOffset = config.options.number_offset;
     const numberOperator = config.options.number_operator;
 
     if (!isLogLevel(config.log_level)) {
         throw new Error("log_level must be one of none, error, info, or debug");
+    }
+
+    if (typeof minify !== "boolean") {
+        throw new Error("options.minify must be true or false");
     }
 
     if (booleanNumber !== null && !Number.isFinite(booleanNumber)) {

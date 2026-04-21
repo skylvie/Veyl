@@ -22,9 +22,23 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
         throw new Error(`Config file must contain a JSON object: ${configPath}`);
     }
 
+    assertNoUnknownKeys(parsed, ["log_level", "features", "options"], "config");
+
     const features = readObject(parsed, "features");
     const obfuscate = features === undefined ? undefined : readObject(features, "obfuscate");
     const options = readObject(parsed, "options");
+
+    assertNoUnknownKeys(
+        features,
+        ["obfuscate", "randomized_unique_identifiers", "unnecessary_depth"],
+        "features"
+    );
+    assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "features.obfuscate");
+    assertNoUnknownKeys(
+        options,
+        ["minify", "boolean_number", "number_offset", "number_operator"],
+        "options"
+    );
 
     return {
         log_level: readOptionalLogLevel(parsed, "log_level", "log_level"),
@@ -46,6 +60,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             ),
         },
         options: {
+            minify: readOptionalBoolean(options, "minify", "options.minify"),
             boolean_number: readOptionalNumberOrNull(
                 options,
                 "boolean_number",
@@ -96,6 +111,22 @@ function readObject(input: unknown, key: string): Record<string, unknown> | unde
     }
 
     return value;
+}
+
+function assertNoUnknownKeys(
+    input: Record<string, unknown> | undefined,
+    allowedKeys: string[],
+    label: string
+): void {
+    if (input === undefined) {
+        return;
+    }
+
+    for (const key of Object.keys(input)) {
+        if (!allowedKeys.includes(key)) {
+            throw new Error(`Unknown config option: ${label}.${key}`);
+        }
+    }
 }
 
 function readOptionalBoolean(

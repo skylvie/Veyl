@@ -23,6 +23,8 @@ export interface ObfuscationConfig {
         unnecessary_depth: boolean;
     };
     options: {
+        /** Run the final esbuild minify step on transformed output. */
+        minify: boolean;
         /** Numeric token used to represent `true`, or null to randomize. */
         boolean_number: number | null;
         /** Numeric offset used for number obfuscation, or null to randomize. */
@@ -50,6 +52,7 @@ export type ObfuscationConfigInput = Partial<{
         unnecessary_depth: boolean;
     }>;
     options: Partial<{
+        minify: boolean;
         boolean_number: number | null;
         number_offset: number | null;
         number_operator: NumberObfuscationOperator | null;

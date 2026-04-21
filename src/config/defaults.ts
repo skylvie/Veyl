@@ -16,6 +16,7 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         unnecessary_depth: true,
     },
     options: {
+        minify: true,
         boolean_number: null,
         number_offset: null,
         number_operator: null,
