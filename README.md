@@ -152,6 +152,33 @@ console.log(result.code);
 - `DEFAULT_CONFIG_FILE` and `DEFAULT_OBFUSCATION_CONFIG`.
 - Types: `ObfuscationConfigInput`, `ObfuscationConfig`, `ObfuscationStats`, `ObfuscateFileOptions`, `ObfuscateCodeResult`, `LogLevel`, and `NumberObfuscationOperator`.
 
+## TODO
+### Core Obfuscation Features
+- [ ] Split string option for string obfuscation
+- [ ] Expression option for number obfuscation
+- [ ] Control flow flattening
+- [ ] Simplification
+- [ ] Customizable identifier renaming
+    - [ ] Different scope levels
+    - [ ] Different name types
+    - [ ] Unicode escape sequences 
+- [ ] Additional string encoding methods
+- [ ] Encrypted payloads with decryption key passed in
+- [ ] `node:vm`
+
+### Anti Debug
+- [ ] Fake source map generation
+- [ ] Disable `console`
+- [ ] DevTools detection & blocking
+- [ ] Domain lock
+- [ ] Debug protection
+- [ ] Self defending
+
+### Other
+- [ ] Webapp Demo
+- [ ] Seperate config parser into seperate package
+- [ ] Anti debug gets its own package
+
 ## Testing
 Make sure you're cloned into the repo first (and have ran `pnpm i`) first! Additionally, the test script only supports UNIX based shells, so no Windows nonsense.
 ```sh
