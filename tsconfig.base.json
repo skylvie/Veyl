@@ -10,8 +10,7 @@
             "node"
         ],
         "typeRoots": [
-            "./node_modules/@types",
-            "/Users/sylvie/Library/pnpm/global/5/.pnpm/node_modules/@types"
+            "./node_modules/@types"
         ],
         "declaration": true,
         "declarationMap": true,
