@@ -5,7 +5,7 @@ import { CommanderError } from "commander";
 import { loadCliConfig } from "./cli/config.js";
 import { buildCliProgram, parseCliArgs, readLogLevelFlag, resolveCliPaths } from "./cli/options.js";
 import { printRunHeader, printStats } from "./cli/output.js";
-import { buildVersionText } from "./cli/projectInfo.js";
+import { readPackageVersion } from "./cli/projectInfo.js";
 import { color } from "./utils/color.js";
 import { createLogger } from "./utils/logger.js";
 
@@ -14,7 +14,7 @@ let activeLogLevel: LogLevel = "info";
 async function main(): Promise<void> {
     activeLogLevel = readLogLevelFlag(process.argv.slice(2)) ?? activeLogLevel;
 
-    const options = parseCliArgs(buildCliProgram(buildVersionText()), process.argv.slice(2));
+    const options = parseCliArgs(buildCliProgram(readPackageVersion()), process.argv.slice(2));
     const resolved = resolveCliPaths(options, process.cwd());
     const loadedConfig = loadCliConfig(resolved, process.cwd());
     const configInput = mergeConfig(loadedConfig.input, resolved.configOverrides);

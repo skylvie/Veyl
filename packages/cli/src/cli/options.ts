@@ -97,7 +97,7 @@ export function buildCliProgram(versionText: string): Command {
                 "Control CLI output verbosity."
             ).argParser((value: string) => parseLogLevel(value, "--log-level"))
         )
-        .version(versionText, "-v, --version", "Show project info, credits, and version.")
+        .version(versionText, "-v, --version", "Display version number.")
         .exitOverride();
 
     return program;
@@ -116,21 +116,31 @@ export function parseCliArgs(program: Command, argv: string[]): CliOptions {
 }
 
 export function readLogLevelFlag(argv: string[]): LogLevel | null {
-    const program = new Command()
-        .allowUnknownOption(true)
-        .exitOverride()
-        .addOption(
-            new Option("--log-level, --log_level <none|error|info|debug>").argParser(
-                (value: string) => parseLogLevel(value, "--log-level")
-            )
-        );
+    for (let i = 0; i < argv.length; i++) {
+        const token = argv[i];
 
-    try {
-        program.parse(argv, { from: "user" });
-        return program.opts<{ logLevel?: LogLevel }>().logLevel ?? null;
-    } catch {
-        return null;
+        if (token !== "--log-level" && token !== "--log_level") {
+            if (!token.startsWith("--log-level=") && !token.startsWith("--log_level=")) {
+                continue;
+            }
+        }
+
+        const value = token.includes("=")
+            ? token.slice(token.indexOf("=") + 1)
+            : (argv[i + 1] ?? null);
+
+        if (value === null) {
+            return null;
+        }
+
+        try {
+            return parseLogLevel(value, "--log-level");
+        } catch {
+            return null;
+        }
     }
+
+    return null;
 }
 
 function buildConfigOverrides(parsed: CommanderCliOptions) {

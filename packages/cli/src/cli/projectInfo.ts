@@ -1,45 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { color } from "../utils/color.js";
-
-interface PackageInfo {
-    name: string;
-    version: string;
-}
-
-export function buildVersionText(): string {
-    const info = readPackageInfo();
-
-    return [
-        `${color.bold(color.cyan(info.name))} ${color.gray(info.version)}`,
-        color.gray("JavaScript/TypeScript obfuscator"),
-        `${color.gray("author:")} ${color.green("Sylvie Rain (skylvi)")}`,
-        `${color.gray("license:")} ${color.green("MIT")}`,
-    ].join("\n");
-}
-
-function readPackageInfo(): PackageInfo {
-    const fallback: PackageInfo = {
-        name: "veyl",
-        version: "unknown",
-    };
+export function readPackageVersion(): string {
     const packagePath = findPackageJson(path.dirname(fileURLToPath(import.meta.url)));
 
     if (packagePath === null) {
-        return fallback;
+        return "unknown";
     }
 
     const parsed: unknown = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
 
     if (!isPackageInfo(parsed)) {
-        return fallback;
+        return "unknown";
     }
 
-    return {
-        name: parsed.name,
-        version: parsed.version,
-    };
+    return parsed.version;
 }
 
 function findPackageJson(startDir: string): string | null {
@@ -69,5 +44,9 @@ function isPackageInfo(input: unknown): input is PackageInfo {
 
     const value = input as Record<string, unknown>;
 
-    return typeof value.name === "string" && typeof value.version === "string";
+    return typeof value.version === "string";
+}
+
+interface PackageInfo {
+    version: string;
 }
