@@ -1,8 +1,28 @@
 {
     "name": "@skylvi/veyl",
-    "version": "1.4.0",
-    "type": "module",
+    "version": "1.4.1",
     "private": false,
+    "keywords": [
+        "obfuscation",
+        "obfuscator"
+    ],
+    "description": "A complete and customizable JavaScript and TypeScript obfuscation utility",
+    "author": {
+        "name": "Sylvie Rain",
+        "email": "admin@skylvi.net",
+        "url": "https://skylvi.net"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/skylvie/veyl.git"
+    },
+    "homepage": "https://github.com/skylvie/veyl#readme",
+    "bugs": {
+        "url": "https://github.com/skylvie/veyl/issues",
+        "email": "admin@skylvi.net"
+    },
+    "license": "MIT",
+    "type": "module",
     "files": [
         "dist/**/*",
         "package.json"

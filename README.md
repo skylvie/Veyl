@@ -1,5 +1,5 @@
 # Veyl
-A standalone TS/JS obfuscator made for my AP CSP create task.
+A complete and customizable JavaScript and TypeScript obfuscation utility
 
 ## Installation
 ```sh
@@ -204,6 +204,9 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode them. It then runs another binding rename pass so the helper names are obfuscated too. By default, esbuild minifies the transformed JS while preserving the randomized identifiers, but you can disable that final minify step with `options.minify` or `--minify=false`.
 
 ## AP CSP Create Task Evidence
+> [!NOTE]
+> This project was made for my AP CSP create task :D
+
 The code includes the required elements:
 - Input from a file: `obfuscateFile` receives the `-i` path and esbuild reads that entry file.
 - Output: `obfuscateFile` writes the `-o` file and the CLI prints status text.

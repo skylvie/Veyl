@@ -18,7 +18,7 @@ export function buildCliProgram(versionText: string): Command {
 
     program
         .name("veyl")
-        .description("Bundle and obfuscate a TypeScript or JavaScript entry file.")
+        .description("A complete and customizable JavaScript and TypeScript obfuscation utility.")
         .requiredOption("-i, --input <path>", "Input TS or JS file to bundle and obfuscate.")
         .requiredOption("-o, --output <path>", "Output JS file to write.")
         .option(
@@ -190,14 +190,10 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         "booleanObfuscationNumber",
         "boolean_obfuscation_number"
     ) as number | null | undefined;
-    const unnecessaryDepth = readAliasedOption(
-        parsed,
-        "unnecessaryDepth",
-        "unnecessary_depth"
-    ) as boolean | undefined;
-    const logLevel = readAliasedOption(parsed, "logLevel", "log_level") as
-        | LogLevel
+    const unnecessaryDepth = readAliasedOption(parsed, "unnecessaryDepth", "unnecessary_depth") as
+        | boolean
         | undefined;
+    const logLevel = readAliasedOption(parsed, "logLevel", "log_level") as LogLevel | undefined;
     let configOverrides = {};
 
     if (obfuscatedStrings !== undefined) {

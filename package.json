@@ -1,6 +1,4 @@
 {
-    "name": "veyl",
-    "private": true,
     "packageManager": "pnpm@10.33.0",
     "scripts": {
         "build": "pnpm -r build",
