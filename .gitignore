@@ -1,8 +1,9 @@
 node_modules/
 dist/
-test/out.js
-test/index.js
-test/module.js
+
+test/*.js
+
 veyl_config.json
+
 out.js
 test.js

@@ -26,6 +26,9 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
             unnecessary_depth:
                 input?.features?.unnecessary_depth ??
                 DEFAULT_OBFUSCATION_CONFIG.features.unnecessary_depth,
+            dead_code_injection:
+                input?.features?.dead_code_injection ??
+                DEFAULT_OBFUSCATION_CONFIG.features.dead_code_injection,
             functionify:
                 input?.features?.functionify ?? DEFAULT_OBFUSCATION_CONFIG.features.functionify,
         },
@@ -68,6 +71,8 @@ export function mergeConfig(
                 base.features?.randomized_unique_identifiers,
             unnecessary_depth:
                 override.features?.unnecessary_depth ?? base.features?.unnecessary_depth,
+            dead_code_injection:
+                override.features?.dead_code_injection ?? base.features?.dead_code_injection,
             functionify: override.features?.functionify ?? base.features?.functionify,
         },
         options: {
@@ -79,6 +84,7 @@ export function mergeConfig(
 
 function validateConfig(config: ObfuscationConfig): void {
     const functionify = config.features.functionify;
+    const deadCodeInjection = config.features.dead_code_injection;
     const minify = config.options.minify;
     const booleanNumber = config.options.boolean_number;
     const numberOffset = config.options.number_offset;
@@ -90,6 +96,10 @@ function validateConfig(config: ObfuscationConfig): void {
 
     if (typeof functionify !== "boolean") {
         throw new Error("features.functionify must be true or false");
+    }
+
+    if (typeof deadCodeInjection !== "boolean") {
+        throw new Error("features.dead_code_injection must be true or false");
     }
 
     if (typeof minify !== "boolean") {

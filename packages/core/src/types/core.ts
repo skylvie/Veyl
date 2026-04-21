@@ -34,6 +34,8 @@ export interface ObfuscationStats {
     renamedProperties: number;
     /** Number of extra call/constructor references added. */
     addedDepthReferences: number;
+    /** Number of unreachable dead-code blocks injected. */
+    addedDeadCodeBlocks: number;
     /** Number of string literals obfuscated. */
     obfuscatedStrings: number;
     /** Number of number literals obfuscated. */
@@ -60,6 +62,8 @@ export interface ObfuscateCodeResult {
     renamedProperties: number;
     /** Number of extra call/constructor references added. */
     addedDepthReferences: number;
+    /** Number of unreachable dead-code blocks injected. */
+    addedDeadCodeBlocks: number;
     /** Number of string literals obfuscated. */
     obfuscatedStrings: number;
     /** Number of number literals obfuscated. */

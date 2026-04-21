@@ -13,7 +13,8 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
             booleans: true,
         },
         randomized_unique_identifiers: true,
-        unnecessary_depth: true,
+        unnecessary_depth: false,
+        dead_code_injection: false,
         functionify: false,
     },
     options: {
