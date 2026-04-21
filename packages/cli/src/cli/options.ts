@@ -69,6 +69,12 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--control-flow-flattening, --control_flow_flattening <true|false>",
+                "Rewrite eligible statement sequences into flattened dispatcher loops."
+            ).argParser((value: string) => parseBoolean(value, "--control-flow-flattening"))
+        )
+        .addOption(
+            new Option(
                 "--number-obfuscation-offset, --number_obfuscation_offset <num|randomized>",
                 "Number offset for numeric literal obfuscation."
             ).argParser((value: string) =>
@@ -175,6 +181,11 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         "deadCodeInjection",
         "dead_code_injection"
     ) as boolean | undefined;
+    const controlFlowFlattening = readAliasedOption(
+        parsed,
+        "controlFlowFlattening",
+        "control_flow_flattening"
+    ) as boolean | undefined;
     const numberObfuscationOffset = readAliasedOption(
         parsed,
         "numberObfuscationOffset",
@@ -242,6 +253,14 @@ function buildConfigOverrides(parsed: CommanderCliOptions) {
         configOverrides = mergeConfig(configOverrides, {
             features: {
                 dead_code_injection: deadCodeInjection,
+            },
+        });
+    }
+
+    if (controlFlowFlattening !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                control_flow_flattening: controlFlowFlattening,
             },
         });
     }
@@ -359,6 +378,7 @@ interface CommanderCliOptions {
     minify?: boolean;
     functionify?: boolean;
     deadCodeInjection?: boolean;
+    controlFlowFlattening?: boolean;
     numberObfuscationOffset?: number | null;
     numberObfuscationOperator?: NumberObfuscationOperator | null;
     booleanObfuscationNumber?: number | null;

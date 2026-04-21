@@ -23,6 +23,8 @@ export interface ObfuscationConfig {
         unnecessary_depth: boolean;
         /** Insert unreachable decoy blocks throughout the transformed program when true. */
         dead_code_injection: boolean;
+        /** Restructure eligible statement sequences into dispatcher-driven state machines when true. */
+        control_flow_flattening: boolean;
         /** Wrap the transformed program body in `new Function(...)` when true. */
         functionify: boolean;
     };
@@ -55,6 +57,7 @@ export type ObfuscationConfigInput = Partial<{
         randomized_unique_identifiers: boolean;
         unnecessary_depth: boolean;
         dead_code_injection: boolean;
+        control_flow_flattening: boolean;
         functionify: boolean;
     }>;
     options: Partial<{
