@@ -4,9 +4,15 @@ import type {
     LogLevel,
     NumberObfuscationOperator,
     ObfuscationConfigInput,
+    StringObfuscationMethod,
 } from "../types/config.js";
 import { DEFAULT_CONFIG_FILE } from "./defaults.js";
-import { isLogLevel, isNumberObfuscationOperator, isPlainObject } from "./guards.js";
+import {
+    isLogLevel,
+    isNumberObfuscationOperator,
+    isPlainObject,
+    isStringObfuscationMethod,
+} from "./guards.js";
 
 /**
  * Reads and validates a Veyl JSON config file from disk.
@@ -44,7 +50,14 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
     assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "features.obfuscate");
     assertNoUnknownKeys(
         options,
-        ["minify", "boolean_number", "number_offset", "number_operator"],
+        [
+            "minify",
+            "string_method",
+            "string_split_length",
+            "boolean_number",
+            "number_offset",
+            "number_operator",
+        ],
         "options"
     );
 
@@ -81,6 +94,16 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
         },
         options: {
             minify: readOptionalBoolean(options, "minify", "options.minify"),
+            string_method: readOptionalStringMethod(
+                options,
+                "string_method",
+                "options.string_method"
+            ),
+            string_split_length: readOptionalPositiveInteger(
+                options,
+                "string_split_length",
+                "options.string_split_length"
+            ),
             boolean_number: readOptionalNumberOrNull(
                 options,
                 "boolean_number",
@@ -219,4 +242,36 @@ function readOptionalNumberOperator(
     }
 
     throw new Error(`${label} must be one of "+", "-", "*", "/", null, or "randomized"`);
+}
+
+function readOptionalStringMethod(
+    input: Record<string, unknown> | undefined,
+    key: string,
+    label: string
+): StringObfuscationMethod | undefined {
+    if (input === undefined || input[key] === undefined) {
+        return undefined;
+    }
+
+    if (isStringObfuscationMethod(input[key])) {
+        return input[key];
+    }
+
+    throw new Error(`${label} must be "array" or "split"`);
+}
+
+function readOptionalPositiveInteger(
+    input: Record<string, unknown> | undefined,
+    key: string,
+    label: string
+): number | undefined {
+    if (input === undefined || input[key] === undefined) {
+        return undefined;
+    }
+
+    if (typeof input[key] !== "number" || !Number.isInteger(input[key]) || input[key] <= 0) {
+        throw new Error(`${label} must be a positive integer`);
+    }
+
+    return input[key];
 }

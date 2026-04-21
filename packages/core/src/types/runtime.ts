@@ -2,10 +2,11 @@ import type { NumberObfuscationOperator } from "./config.js";
 
 export interface RuntimeHelperOptions {
     strings?: {
-        tableName: string;
-        accessorName: string;
+        method: "array" | "split";
         decoderName: string;
-        encodedTable: string[][];
+        tableName?: string;
+        accessorName?: string;
+        encodedTable?: string[][];
         xorKey: number;
     };
     numbers?: {

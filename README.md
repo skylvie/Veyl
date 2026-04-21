@@ -52,6 +52,8 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 	},
 	"options": { // Leave these as "randomized" or `null` to use random values
 		"minify": true, // Run the final esbuild minify pass
+		"string_method": "array", // String obfuscation strategy ("array" or "split")
+		"string_split_length": 3, // Chunk length when using split string obfuscation
 		"boolean_number": 120, // Number to use as boolean representation
 		"number_offset": 12, // Number to use as offset
 		"number_operator": "+" // Number operator to use as offset (+, -, *, /)
@@ -77,6 +79,8 @@ You can also use CLI flags instead:
 --dead-code-injection=true|false
 --control-flow-flattening=true|false
 --simplify=true|false
+--string-method=array|split
+--string-split-length=<num>
 --number-obfuscation-offset=<num|randomized>
 --number-obfuscation-operator=<+|-|*|/|randomized>
 --boolean-obfuscation-number=<num|randomized>
@@ -121,6 +125,8 @@ const stats = await obfuscateFile({
         },
         options: {
             minify: true,
+            string_method: "array",
+            string_split_length: 3,
             boolean_number: null,
             number_offset: null,
             number_operator: null,
@@ -160,11 +166,10 @@ console.log(result.code);
 
 ## TODO
 ### Core Obfuscation Features
-- [ ] Object props don't get obfuscated? (e.g. `const obj = { a: "b" }; console.log(obj.a);`)
-- [ ] Split (`"" + ""`) string option for string obfuscation
+- [ ] Encode config option (disable encoding)
 - [ ] Expression option (`1*2/4+4-5`) for number obfuscation
-- [x] Control flow flattening
-- [x] Simplification
+- [ ] Boolean obfuscation option for `true` -> `!![]` and `false` -> `![]`
+    - [ ] Randomized depth? (e.g. `!!!!!![]`)
 - [ ] Customizable identifier renaming
     - [ ] Different scope levels
     - [ ] Different name types
@@ -233,7 +238,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Dead code injection can insert unreachable decoy control flow and computations so the transformed program looks busier than the logic it actually executes.
 - Control flow flattening can rewrite eligible straight-line statement runs into a randomized dispatcher loop so the original execution order is hidden behind a state machine.
 - Simplify can merge declarations and expression chains, compact `if/else` returns into conditional expressions, and fold expression tails into comma-expression returns.
-- String literals are moved into a randomized string table. Each stored string is encoded with base64, bit rotation, and XOR, then decoded at runtime by injected helper functions.
+- String literals are encoded with base64, bit rotation, and XOR, then decoded at runtime. `options.string_method: "array"` stores them in a randomized string table, while `"split"` emits inline concatenated decoded chunks.
 - Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
 - When `features.functionify` is enabled, Veyl stringifies the transformed program body, obfuscates that body string, and executes it through `new Function(...)` while passing imported bindings and helper functions in as runtime arguments.
@@ -251,6 +256,3 @@ The code includes the required elements:
 - Student-developed procedure: `buildConfigOverrides(parsed)` converts parsed CLI values into `ObfuscationConfigInput` overrides through sequencing and selection.
 - Procedure call: `packages/cli/src/cli.ts` builds the command, parses `process.argv.slice(2)`, resolves config, and then calls `obfuscateFile(...)`.
 - Validation: Commander argument parsers such as `parseBoolean`, `parseNumberOrRandomized`, and `parseLogLevel` enforce allowed CLI values before execution continues.
-
-## What Else Can I Do to Make Reverse Engineering My Project Harder?
-[Source maps](https://web.dev/articles/source-maps) exist to make debugging easier. If you want another layer of friction, you can generate fake source maps to mislead people inspecting your build output. A project like [fake-source-map](https://github.com/altwine/fake-source-map) can help with that.

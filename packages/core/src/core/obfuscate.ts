@@ -13,7 +13,7 @@ import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";
 import { simplifyStatements } from "../transforms/simplifier.js";
 import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
-import type { ObfuscationConfigInput } from "../types/config.js";
+import type { ObfuscationConfigInput, StringObfuscationMethod } from "../types/config.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
 import type { RuntimeHelperOptions } from "../types/runtime.js";
 import { encodeStringLiteralValue, NameGenerator } from "../utils/random.js";
@@ -102,7 +102,7 @@ export function obfuscateCode(
     const literalResult = obfuscateLiterals(ast, names, config);
 
     if (config.features.functionify) {
-        functionifyProgram(ast, names, literalResult.runtimeOptions);
+        functionifyProgram(ast, names, literalResult.runtimeOptions, config);
         literalResult.stringCount++;
     }
 
@@ -137,7 +137,8 @@ export function obfuscateCode(
 function functionifyProgram(
     ast: object,
     names: NameGenerator,
-    runtimeOptions: RuntimeHelperOptions
+    runtimeOptions: RuntimeHelperOptions,
+    config: { options: { string_method: StringObfuscationMethod; string_split_length: number } }
 ): void {
     const program = (ast as { program?: { body?: t.Statement[] } }).program;
 
@@ -170,12 +171,7 @@ function functionifyProgram(
         ...collectTopLevelBindingNames(imports),
         ...collectRuntimeBindingNames(runtimeOptions),
     ];
-    const bodyStringRef = addFunctionifiedBodyString(runtimeOptions, names, bodyCode);
-    const bodyStringExpression = t.callExpression(t.identifier(bodyStringRef.decoderName), [
-        t.callExpression(t.identifier(bodyStringRef.accessorName), [
-            t.numericLiteral(bodyStringRef.tableIndex),
-        ]),
-    ]);
+    const bodyStringExpression = addFunctionifiedBodyString(runtimeOptions, names, bodyCode, config);
     const functionCall = t.expressionStatement(
         t.callExpression(
             t.newExpression(t.identifier("Function"), [
@@ -225,11 +221,15 @@ function collectRuntimeBindingNames(runtimeOptions: RuntimeHelperOptions): strin
     const names: string[] = [];
 
     if (runtimeOptions.strings !== undefined) {
-        names.push(
-            runtimeOptions.strings.tableName,
-            runtimeOptions.strings.accessorName,
-            runtimeOptions.strings.decoderName
-        );
+        names.push(runtimeOptions.strings.decoderName);
+
+        if (runtimeOptions.strings.tableName !== undefined) {
+            names.push(runtimeOptions.strings.tableName);
+        }
+
+        if (runtimeOptions.strings.accessorName !== undefined) {
+            names.push(runtimeOptions.strings.accessorName);
+        }
     }
 
     if (runtimeOptions.numbers !== undefined) {
@@ -246,16 +246,37 @@ function collectRuntimeBindingNames(runtimeOptions: RuntimeHelperOptions): strin
 function addFunctionifiedBodyString(
     runtimeOptions: RuntimeHelperOptions,
     names: NameGenerator,
-    bodyCode: string
-): { accessorName: string; decoderName: string; tableIndex: number } {
+    bodyCode: string,
+    config: { options: { string_method: StringObfuscationMethod; string_split_length: number } }
+): t.Expression {
     if (runtimeOptions.strings === undefined) {
         runtimeOptions.strings = {
-            tableName: names.freshIdentifier(),
-            accessorName: names.freshIdentifier(),
+            method: config.options.string_method,
             decoderName: names.freshIdentifier(),
-            encodedTable: [],
             xorKey: crypto.randomInt(1, 256),
         };
+
+        if (config.options.string_method === "array") {
+            runtimeOptions.strings.tableName = names.freshIdentifier();
+            runtimeOptions.strings.accessorName = names.freshIdentifier();
+            runtimeOptions.strings.encodedTable = [];
+        }
+    }
+
+    if (runtimeOptions.strings.method === "split") {
+        return buildSplitStringExpression(
+            runtimeOptions.strings.decoderName,
+            bodyCode,
+            runtimeOptions.strings.xorKey,
+            config.options.string_split_length
+        );
+    }
+
+    if (
+        runtimeOptions.strings.accessorName === undefined ||
+        runtimeOptions.strings.encodedTable === undefined
+    ) {
+        throw new Error("array string obfuscation requires string table state");
     }
 
     const tableIndex = runtimeOptions.strings.encodedTable.length;
@@ -264,11 +285,11 @@ function addFunctionifiedBodyString(
         chunkEncodedString(encodeStringLiteralValue(bodyCode, runtimeOptions.strings.xorKey))
     );
 
-    return {
-        accessorName: runtimeOptions.strings.accessorName,
-        decoderName: runtimeOptions.strings.decoderName,
-        tableIndex,
-    };
+    return t.callExpression(t.identifier(runtimeOptions.strings.decoderName), [
+        t.callExpression(t.identifier(runtimeOptions.strings.accessorName), [
+            t.numericLiteral(tableIndex),
+        ]),
+    ]);
 }
 
 function collectPatternBindingNames(pattern: t.Node, names: string[]): void {
@@ -320,6 +341,41 @@ function chunkEncodedString(input: string): string[] {
 
     for (let i = 0; i < input.length; i += 3) {
         chunks.push(input.slice(i, i + 3));
+    }
+
+    return chunks;
+}
+
+function buildSplitStringExpression(
+    stringDecoderName: string,
+    literalValue: string,
+    stringXorKey: number,
+    stringSplitLength: number
+): t.Expression {
+    const parts = splitPlainString(literalValue, stringSplitLength).map((chunk) =>
+        t.callExpression(t.identifier(stringDecoderName), [
+            t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
+        ])
+    );
+
+    let output: t.Expression = parts[0] ?? t.stringLiteral("");
+
+    for (let i = 1; i < parts.length; i++) {
+        output = t.binaryExpression("+", output, parts[i]);
+    }
+
+    return output;
+}
+
+function splitPlainString(input: string, splitLength: number): string[] {
+    if (input.length === 0) {
+        return [""];
+    }
+
+    const chunks: string[] = [];
+
+    for (let i = 0; i < input.length; i += splitLength) {
+        chunks.push(input.slice(i, i + splitLength));
     }
 
     return chunks;

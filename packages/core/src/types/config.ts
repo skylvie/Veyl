@@ -1,5 +1,6 @@
 /** Operators Veyl can use when encoding numeric literals. */
 export type NumberObfuscationOperator = "+" | "-" | "*" | "/";
+export type StringObfuscationMethod = "array" | "split";
 
 /** CLI/package logging verbosity. */
 export type LogLevel = "none" | "error" | "info" | "debug";
@@ -33,6 +34,10 @@ export interface ObfuscationConfig {
     options: {
         /** Run the final esbuild minify step on transformed output. */
         minify: boolean;
+        /** String obfuscation strategy. */
+        string_method: StringObfuscationMethod;
+        /** Chunk size used by split string obfuscation. */
+        string_split_length: number;
         /** Numeric token used to represent `true`, or null to randomize. */
         boolean_number: number | null;
         /** Numeric offset used for number obfuscation, or null to randomize. */
@@ -65,6 +70,8 @@ export type ObfuscationConfigInput = Partial<{
     }>;
     options: Partial<{
         minify: boolean;
+        string_method: StringObfuscationMethod;
+        string_split_length: number;
         boolean_number: number | null;
         number_offset: number | null;
         number_operator: NumberObfuscationOperator | null;

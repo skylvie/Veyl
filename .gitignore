@@ -6,4 +6,4 @@ test/*.js
 veyl_config.json
 
 out.js
-test.js
+meow.js

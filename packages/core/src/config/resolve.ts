@@ -1,6 +1,6 @@
 import type { ObfuscationConfig, ObfuscationConfigInput } from "../types/config.js";
 import { DEFAULT_OBFUSCATION_CONFIG } from "./defaults.js";
-import { isLogLevel, isNumberObfuscationOperator } from "./guards.js";
+import { isLogLevel, isNumberObfuscationOperator, isStringObfuscationMethod } from "./guards.js";
 
 /**
  * Fills a partial user config with Veyl defaults and validates the result.
@@ -38,6 +38,11 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
         },
         options: {
             minify: input?.options?.minify ?? DEFAULT_OBFUSCATION_CONFIG.options.minify,
+            string_method:
+                input?.options?.string_method ?? DEFAULT_OBFUSCATION_CONFIG.options.string_method,
+            string_split_length:
+                input?.options?.string_split_length ??
+                DEFAULT_OBFUSCATION_CONFIG.options.string_split_length,
             boolean_number:
                 input?.options?.boolean_number ?? DEFAULT_OBFUSCATION_CONFIG.options.boolean_number,
             number_offset:
@@ -96,6 +101,8 @@ function validateConfig(config: ObfuscationConfig): void {
     const controlFlowFlattening = config.features.control_flow_flattening;
     const simplify = config.features.simplify;
     const minify = config.options.minify;
+    const stringMethod = config.options.string_method;
+    const stringSplitLength = config.options.string_split_length;
     const booleanNumber = config.options.boolean_number;
     const numberOffset = config.options.number_offset;
     const numberOperator = config.options.number_operator;
@@ -122,6 +129,14 @@ function validateConfig(config: ObfuscationConfig): void {
 
     if (typeof minify !== "boolean") {
         throw new Error("options.minify must be true or false");
+    }
+
+    if (!isStringObfuscationMethod(stringMethod)) {
+        throw new Error('options.string_method must be "array" or "split"');
+    }
+
+    if (!Number.isInteger(stringSplitLength) || stringSplitLength <= 0) {
+        throw new Error("options.string_split_length must be a positive integer");
     }
 
     if (booleanNumber !== null && !Number.isFinite(booleanNumber)) {
