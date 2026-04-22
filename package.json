@@ -11,7 +11,7 @@
         "format": "biome format --write packages",
         "check": "biome check --write packages",
         "test": "node tests/runner.mjs",
-        "cloc": "cloc --exclude-dir=dist,node_modules --exclude-lang=YAML ."
+        "cloc": "cloc --exclude-dir=dist,node_modules --exclude-list-file=pnpm-lock.yaml ."
     },
     "devDependencies": {
         "@biomejs/biome": "^2.4.12",

@@ -32,10 +32,16 @@ pnpm build # build all packages
 ## Required Checks
 Before opening a PR, make sure your changes pass:
 ```sh
+pnpm lint
 pnpm check
-pnpm test
+pnpm typecheck
 pnpm build
+pnpm test
 ```
+
+GitHub Actions runs `pnpm lint`, `pnpm test`, `pnpm typecheck`, and `pnpm build` on every push
+and pull request. The browser app in `packages/app` is also built and deployed to GitHub Pages on
+pushes to `main`.
 
 ## Testing
 ```sh

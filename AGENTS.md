@@ -21,7 +21,8 @@ Project docs live in `docs/`. Integration-style test fixtures live in `tests/cas
 - `pnpm check`: runs Biome checks and safe fixes.
 - `pnpm test`: runs `tests/runner.mjs`.
 
-Before submitting changes, at minimum run `pnpm check`, `pnpm test`, and `pnpm build`.
+Before submitting changes, at minimum run `pnpm lint`, `pnpm check`, `pnpm typecheck`,
+`pnpm build`, and `pnpm test`.
 
 ## Coding Style & Naming Conventions
 Biome defines formatting: 4-space indentation, 100-column width, double quotes, semicolons, and ES5 trailing commas. Follow existing file naming patterns:
@@ -32,3 +33,9 @@ Keep changes scoped. Prefer editing source in `packages/`. When behavior, config
 
 ## Testing Guidelines
 This project uses the case-based runner in `tests/runner.mjs`. Add or update fixtures in `tests/cases/` when changing emitted code behavior. If a transform changes output shape, verify both build success and runtime behavior.
+
+## CI/CD
+- GitHub Actions runs `pnpm lint`, `pnpm test`, `pnpm typecheck`, and `pnpm build` on every push
+  and pull request.
+- The browser playground is deployed to GitHub Pages from `packages/app/dist` on pushes to
+  `main`.

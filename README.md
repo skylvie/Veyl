@@ -7,6 +7,9 @@ pnpm i -g @skylvi/veyl-cli
 veyl -i ./input.ts -o ./output.js
 ```
 
+### Web Demo
+If you don't want to install Veyl but want to mess around with it, you can use the webapp found [here](https://skylvie.github.io/veyl/)
+
 ## Install From Source
 ```sh
 git clone https://github.com/skylvie/veyl
