@@ -13,9 +13,17 @@ export interface ObfuscateFileOptions {
     /** TypeScript or JavaScript entry file to bundle and obfuscate. */
     input: string;
     /** JavaScript file path where the obfuscated output will be written. */
-    output: string;
+    output?: string | null;
     /** Optional Veyl config overrides. Omitted values use defaults. */
     config?: ObfuscationConfigInput;
+}
+
+/** Result returned by `obfuscateEntry`. */
+export interface ObfuscateEntryResult {
+    /** Obfuscated JavaScript source. */
+    code: string;
+    /** Run statistics for the bundled and obfuscated entry. */
+    stats: ObfuscationStats;
 }
 
 /** Statistics returned after `obfuscateFile` writes output. */

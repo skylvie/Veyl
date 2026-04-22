@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import * as t from "@babel/types";
 import type {
     NumberObfuscationMethod,
@@ -10,6 +9,7 @@ import { traverse } from "../../babel/interop.js";
 import { isPropertyKeyNode } from "../../babel/predicates.js";
 import type { BabelNode, BabelNodePath } from "../../types/babel.js";
 import type { LiteralObfuscationResult } from "../../types/transforms.js";
+import { randomInt } from "../../utils/platform.js";
 import type { NameGenerator } from "../../utils/random.js";
 
 const ADDITIVE_NUMBER_SHIFT_MIN = 100_000;
@@ -100,13 +100,11 @@ export function obfuscateNumberLiterals(
 function pickNumberOperator(
     operators: readonly NumberObfuscationOperator[]
 ): NumberObfuscationOperator {
-    return operators[crypto.randomInt(0, operators.length)];
+    return operators[randomInt(0, operators.length)];
 }
 
 function pickNumberOperatorFamily(): readonly NumberObfuscationOperator[] {
-    return crypto.randomInt(0, 2) === 0
-        ? ADDITIVE_NUMBER_OPERATORS
-        : MULTIPLICATIVE_NUMBER_OPERATORS;
+    return randomInt(0, 2) === 0 ? ADDITIVE_NUMBER_OPERATORS : MULTIPLICATIVE_NUMBER_OPERATORS;
 }
 
 function pickNumberOperators(
@@ -148,7 +146,7 @@ function buildEquationNumberExpression(original: number): t.Expression {
     const ratio = toIntegerRatio(original);
 
     if (ratio !== null) {
-        const multiplier = crypto.randomInt(2, 17);
+        const multiplier = randomInt(2, 17);
         const denominator = ratio.denominator * multiplier;
         const target = ratio.numerator * multiplier;
 
@@ -161,9 +159,9 @@ function buildEquationNumberExpression(original: number): t.Expression {
 }
 
 function buildEquationFromScaledTarget(target: number, denominator: number): t.Expression {
-    const left = crypto.randomInt(0x20, 0x400);
-    const right = crypto.randomInt(0x02, 0x20);
-    const extra = crypto.randomInt(0x10, 0x200);
+    const left = randomInt(0x20, 0x400);
+    const right = randomInt(0x02, 0x20);
+    const extra = randomInt(0x10, 0x200);
     const partial = left * right + extra;
     const correction = partial - target;
     const numerator = t.binaryExpression(
@@ -182,7 +180,7 @@ function buildEquationFromScaledTarget(target: number, denominator: number): t.E
 }
 
 function buildFallbackEquationNumberExpression(original: number): t.Expression {
-    const delta = crypto.randomInt(0x10, 0x400);
+    const delta = randomInt(0x10, 0x400);
 
     return t.binaryExpression(
         "-",
@@ -281,18 +279,15 @@ function encodeNumber(
 
 function randomNumberOffset(operators: readonly NumberObfuscationOperator[]): number {
     if (operators.includes("/")) {
-        return 2 ** crypto.randomInt(1, 11);
+        return 2 ** randomInt(1, 11);
     }
 
     if (operators.includes("*")) {
-        return crypto.randomInt(
-            MULTIPLICATIVE_NUMBER_SHIFT_MIN,
-            MULTIPLICATIVE_NUMBER_SHIFT_MAX + 1
-        );
+        return randomInt(MULTIPLICATIVE_NUMBER_SHIFT_MIN, MULTIPLICATIVE_NUMBER_SHIFT_MAX + 1);
     }
 
     if (operators.includes("+") || operators.includes("-")) {
-        return crypto.randomInt(ADDITIVE_NUMBER_SHIFT_MIN, ADDITIVE_NUMBER_SHIFT_MAX + 1);
+        return randomInt(ADDITIVE_NUMBER_SHIFT_MIN, ADDITIVE_NUMBER_SHIFT_MAX + 1);
     }
 
     return 2;

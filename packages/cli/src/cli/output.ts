@@ -6,7 +6,7 @@ import { color } from "../utils/color.js";
 
 export function printRunHeader(logger: CliLogger, options: CliOptions, configSource: string): void {
     logger.debug(`${color.gray("input: ")} ${options.input}\n`);
-    logger.debug(`${color.gray("output:")} ${options.output}\n`);
+    logger.debug(`${color.gray("output:")} ${options.output ?? "<stdout>"}\n`);
     logger.debug(`${color.gray("config:")} ${configSource}\n\n`);
     logger.info(`${color.blue("[run]")} bundling, transforming, and emitting...\n`);
 }
@@ -19,7 +19,9 @@ export function printStats(
     const totalLiterals =
         stats.obfuscatedStrings + stats.obfuscatedNumbers + stats.obfuscatedBooleans;
 
-    logger.info(`${color.green("[ok]")} wrote ${color.bold(stats.output)}\n`);
+    logger.info(
+        `${color.green("[ok]")} ${stats.output === "<stdout>" ? "emitted to stdout" : `wrote ${color.bold(stats.output)}`}\n`
+    );
     logger.debug("\n");
     printConfigSummary(logger, config, stats);
     logger.debug(`${color.bold("Summary")}\n`);

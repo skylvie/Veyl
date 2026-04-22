@@ -8,6 +8,7 @@ pnpm i -g @skylvi/veyl-cli
 ## Basic Usage
 ```sh
 veyl -i ./input.ts -o ./output.js
+veyl -i ./input.ts
 ```
 
 ## Install From Source
@@ -17,12 +18,16 @@ cd veyl
 pnpm install
 pnpm build
 node packages/cli/dist/index.js -i ./input.ts -o ./output.js
+node packages/cli/dist/index.js -i ./input.ts
 ```
 Optional global link:
 ```sh
 pnpm add -g "$PWD/packages/cli"
 veyl -i ./input.ts -o ./output.js
+veyl -i ./input.ts
 ```
+
+If `-o` / `--output` is omitted, Veyl prints the obfuscated code to stdout instead of writing a file.
 
 ## CLI Flags
 ```text

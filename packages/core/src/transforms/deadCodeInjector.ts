@@ -1,6 +1,6 @@
-import crypto from "node:crypto";
 import * as t from "@babel/types";
 import type { DeadCodeInjectionResult } from "../types/transforms.js";
+import { randomInt } from "../utils/platform.js";
 import type { NameGenerator } from "../utils/random.js";
 
 // Injects unreachable but plausible-looking decoy blocks into statement containers
@@ -151,10 +151,10 @@ function shouldRandomlyInjectBefore(statement: t.Statement): boolean {
     // Function and class declarations are kept sparser so the surrounding module shape remains
     // believable instead of looking obviously machine-generated.
     if (t.isFunctionDeclaration(statement) || t.isClassDeclaration(statement)) {
-        return crypto.randomInt(0, 100) < 20;
+        return randomInt(0, 100) < 20;
     }
 
-    return crypto.randomInt(0, 100) < 35;
+    return randomInt(0, 100) < 35;
 }
 
 function buildDeadCodeStatement(names: NameGenerator): t.Statement {
@@ -162,9 +162,9 @@ function buildDeadCodeStatement(names: NameGenerator): t.Statement {
     const valuesName = names.freshIdentifier();
     const indexName = names.freshIdentifier();
     const computeName = names.freshIdentifier();
-    const branchKey = crypto.randomInt(5000, 9000);
-    const sentinel = branchKey + crypto.randomInt(5, 30);
-    const values = Array.from({ length: 3 }, () => crypto.randomInt(10, 500));
+    const branchKey = randomInt(5000, 9000);
+    const sentinel = branchKey + randomInt(5, 30);
+    const values = Array.from({ length: 3 }, () => randomInt(10, 500));
 
     return t.ifStatement(
         t.binaryExpression("!==", t.numericLiteral(branchKey), t.numericLiteral(branchKey)),

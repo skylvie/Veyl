@@ -2,7 +2,9 @@
     "packageManager": "pnpm@10.33.0",
     "scripts": {
         "build": "pnpm -r build",
-        "start": "node packages/cli/dist/cli.js",
+        "cli": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; node packages/cli/dist/index.js \"$@\"' --",
+        "dev": "pnpm --filter @skylvi/veyl-app dev",
+        "preview": "pnpm --filter @skylvi/veyl-app preview",
         "typecheck": "pnpm -r typecheck",
         "lint": "biome lint packages",
         "lint:fix": "biome lint --write packages",

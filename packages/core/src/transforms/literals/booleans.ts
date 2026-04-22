@@ -1,9 +1,9 @@
-import crypto from "node:crypto";
 import * as t from "@babel/types";
 import type { ObfuscationConfig } from "@skylvi/veyl-config";
 import { traverse } from "../../babel/interop.js";
 import type { BabelNode, BabelNodePath } from "../../types/babel.js";
 import type { LiteralObfuscationResult } from "../../types/transforms.js";
+import { randomInt } from "../../utils/platform.js";
 import type { NameGenerator } from "../../utils/random.js";
 
 export function obfuscateBooleanLiterals(
@@ -29,12 +29,12 @@ export function obfuscateBooleanLiterals(
 
     if (booleanMethod === "number") {
         boolDecoderName = names.freshIdentifier();
-        trueToken = config.obfuscate.booleans.number ?? crypto.randomInt(10000, 99999);
-        falseToken = crypto.randomInt(10000, 99999);
+        trueToken = config.obfuscate.booleans.number ?? randomInt(10000, 99999);
+        falseToken = randomInt(10000, 99999);
         booleanNumber = trueToken;
 
         while (falseToken === trueToken) {
-            falseToken = crypto.randomInt(10000, 99999);
+            falseToken = randomInt(10000, 99999);
         }
     }
 
@@ -113,7 +113,7 @@ function resolveBooleanDepth(configuredDepth: number | "randomized" | null): num
     }
 
     if (configuredDepth === "randomized") {
-        return crypto.randomInt(1, 13);
+        return randomInt(1, 13);
     }
 
     return configuredDepth;

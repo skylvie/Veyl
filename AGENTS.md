@@ -1,7 +1,8 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repo is a `pnpm` workspace with three main packages under `packages/`:
+This repo is a `pnpm` workspace with four main packages under `packages/`:
+- `packages/app`: the Vite + Monaco browser playground for experimenting with Veyl.
 - `packages/core`: the `@skylvi/veyl` library and AST transforms.
 - `packages/cli`: the CLI entrypoint and argument/config handling.
 - `packages/config`: shared config types, defaults, loading, and validation.
@@ -10,7 +11,9 @@ Project docs live in `docs/`. Integration-style test fixtures live in `tests/cas
 
 ## Build, Test, and Development Commands
 - `pnpm build`: builds all workspace packages.
-- `pnpm start -- -i tests/cases/functionality/entry.ts -o out.js`: runs the built CLI locally.
+- `pnpm cli`: runs the built CLI locally.
+- `pnpm dev`: runs the Vite dev server for `packages/app`.
+- `pnpm preview`: runs the Vite preview server for `packages/app`.
 - `pnpm typecheck`: runs TypeScript checks across the workspace.
 - `pnpm lint`: runs Biome lint on `packages/`.
 - `pnpm lint:fix`: applies lint fixes.

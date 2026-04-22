@@ -1,7 +1,7 @@
-import crypto from "node:crypto";
 import * as t from "@babel/types";
 import type { StringObfuscationMethod } from "@skylvi/veyl-config";
 import type { RuntimeHelperOptions } from "../../types/runtime.js";
+import { randomInt } from "../../utils/platform.js";
 import { encodeStringLiteralValue, type NameGenerator } from "../../utils/random.js";
 import { createStringLiteralNode } from "../../utils/stringLiteral.js";
 
@@ -28,7 +28,7 @@ export function addWrappedBodyString(
             decoderName: names.freshIdentifier(),
             encode: config.obfuscate.strings.encode,
             unicodeEscapeSequence: config.obfuscate.strings.unicode_escape_sequence,
-            xorKey: crypto.randomInt(1, 256),
+            xorKey: randomInt(1, 256),
         };
 
         if (config.obfuscate.strings.method === "array") {
@@ -122,7 +122,7 @@ function shuffleStringParts(parts: string[]): { parts: string[]; order: number[]
     const shuffled = parts.map((value, index) => ({ value, index }));
 
     for (let i = shuffled.length - 1; i > 0; i--) {
-        const pickAt = crypto.randomInt(0, i + 1);
+        const pickAt = randomInt(0, i + 1);
         const current = shuffled[i];
         shuffled[i] = shuffled[pickAt] as { value: string; index: number };
         shuffled[pickAt] = current as { value: string; index: number };
