@@ -11,6 +11,7 @@ import type { BabelNode, BabelNodePath } from "../../types/babel.js";
 import type { LiteralObfuscationResult } from "../../types/transforms.js";
 import type { NameGenerator } from "../../utils/random.js";
 import { encodeStringLiteralValue } from "../../utils/random.js";
+import { createStringLiteralNode } from "../../utils/stringLiteral.js";
 
 interface StringTableState {
     encodedTable: string[][];
@@ -24,14 +25,17 @@ export function obfuscateStringLiterals(
     config: ObfuscationConfig,
     runtimeOptions: LiteralObfuscationResult["runtimeOptions"]
 ): number {
-    if (!config.obfuscate.strings.enabled) {
+    const stringObfuscationEnabled = config.obfuscate.strings.enabled;
+    const unicodeEscapeSequence = config.obfuscate.strings.unicode_escape_sequence;
+
+    if (!stringObfuscationEnabled && !unicodeEscapeSequence) {
         return 0;
     }
 
     const stringDecoderName = names.freshIdentifier();
     const stringXorKey = crypto.randomInt(1, 256);
     const stringEncode = config.obfuscate.strings.encode;
-    const stringMethod = config.obfuscate.strings.method;
+    const stringMethod = stringObfuscationEnabled ? config.obfuscate.strings.method : null;
     const stringSplitLength = config.obfuscate.strings.split_length;
     const stringTableName = stringMethod === "array" ? names.freshIdentifier() : undefined;
     const stringAccessorName = stringMethod === "array" ? names.freshIdentifier() : undefined;
@@ -88,7 +92,8 @@ export function obfuscateStringLiterals(
                 stringXorKey,
                 stringEncode,
                 stringSplitLength,
-                stringTableState
+                stringTableState,
+                unicodeEscapeSequence
             ) as unknown as BabelNode
         );
     }
@@ -106,17 +111,19 @@ export function obfuscateStringLiterals(
             stringXorKey,
             stringEncode,
             stringSplitLength,
-            stringTableState
+            stringTableState,
+            unicodeEscapeSequence
         );
 
         templatePath.replaceWith(replacement as unknown as BabelNode);
     }
 
-    if (totalStringEntries > 0) {
+    if (totalStringEntries > 0 && stringObfuscationEnabled) {
         runtimeOptions.strings = {
-            method: stringMethod,
+            method: stringMethod ?? "array",
             decoderName: stringDecoderName,
             encode: stringEncode,
+            unicodeEscapeSequence,
             xorKey: stringXorKey,
         };
 
@@ -147,13 +154,14 @@ function countTemplateStringParts(templateLiteralPaths: BabelNodePath[]): number
 
 function buildTemplateLiteralReplacement(
     node: t.TemplateLiteral,
-    stringMethod: StringObfuscationMethod,
+    stringMethod: StringObfuscationMethod | null,
     stringDecoderName: string,
     stringAccessorName: string | undefined,
     stringXorKey: number,
     stringEncode: boolean,
     stringSplitLength: number,
-    stringTableState: StringTableState | null
+    stringTableState: StringTableState | null,
+    unicodeEscapeSequence: boolean
 ): t.Expression {
     if (node.expressions.length === 0) {
         return buildStringObfuscatedExpression(
@@ -164,7 +172,8 @@ function buildTemplateLiteralReplacement(
             stringXorKey,
             stringEncode,
             stringSplitLength,
-            stringTableState
+            stringTableState,
+            unicodeEscapeSequence
         );
     }
 
@@ -180,7 +189,8 @@ function buildTemplateLiteralReplacement(
                 stringXorKey,
                 stringEncode,
                 stringSplitLength,
-                stringTableState
+                stringTableState,
+                unicodeEscapeSequence
             )
         );
 
@@ -189,7 +199,7 @@ function buildTemplateLiteralReplacement(
         }
     }
 
-    let output: t.Expression = parts[0] ?? t.stringLiteral("");
+    let output: t.Expression = parts[0] ?? createStringLiteralNode("", unicodeEscapeSequence);
 
     for (let i = 1; i < parts.length; i++) {
         output = t.binaryExpression("+", output, parts[i]);
@@ -199,22 +209,28 @@ function buildTemplateLiteralReplacement(
 }
 
 function buildStringObfuscatedExpression(
-    stringMethod: StringObfuscationMethod,
+    stringMethod: StringObfuscationMethod | null,
     stringDecoderName: string,
     stringAccessorName: string | undefined,
     literalValue: string,
     stringXorKey: number,
     stringEncode: boolean,
     stringSplitLength: number,
-    stringTableState: StringTableState | null
+    stringTableState: StringTableState | null,
+    unicodeEscapeSequence: boolean
 ): t.Expression {
+    if (stringMethod === null) {
+        return createStringLiteralNode(literalValue, unicodeEscapeSequence);
+    }
+
     if (stringMethod === "split") {
         return buildSplitStringExpression(
             stringDecoderName,
             literalValue,
             stringXorKey,
             stringEncode,
-            stringSplitLength
+            stringSplitLength,
+            unicodeEscapeSequence
         );
     }
 
@@ -241,18 +257,22 @@ function buildSplitStringExpression(
     literalValue: string,
     stringXorKey: number,
     stringEncode: boolean,
-    stringSplitLength: number
+    stringSplitLength: number,
+    unicodeEscapeSequence: boolean
 ): t.Expression {
     const literalChunks = splitPlainString(literalValue, stringSplitLength);
     const parts = literalChunks.map((chunk) =>
         stringEncode
             ? t.callExpression(t.identifier(stringDecoderName), [
-                  t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
+                  createStringLiteralNode(
+                      encodeStringLiteralValue(chunk, stringXorKey),
+                      unicodeEscapeSequence
+                  ),
               ])
-            : t.stringLiteral(chunk)
+            : createStringLiteralNode(chunk, unicodeEscapeSequence)
     );
 
-    let output: t.Expression = parts[0] ?? t.stringLiteral("");
+    let output: t.Expression = parts[0] ?? createStringLiteralNode("", unicodeEscapeSequence);
 
     for (let i = 1; i < parts.length; i++) {
         output = t.binaryExpression("+", output, parts[i]);

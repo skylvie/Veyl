@@ -12,6 +12,7 @@ export interface ObfuscationConfig {
         strings: {
             enabled: boolean;
             encode: boolean;
+            unicode_escape_sequence: boolean;
             method: StringObfuscationMethod;
             split_length: number;
         };
@@ -45,6 +46,7 @@ export type ObfuscationConfigInput = Partial<{
         strings: Partial<{
             enabled: boolean;
             encode: boolean;
+            unicode_escape_sequence: boolean;
             method: StringObfuscationMethod;
             split_length: number;
         }>;

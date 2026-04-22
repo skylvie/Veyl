@@ -37,7 +37,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
     assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "obfuscate");
     assertNoUnknownKeys(
         strings,
-        ["enabled", "encode", "method", "split_length"],
+        ["enabled", "encode", "unicode_escape_sequence", "method", "split_length"],
         "obfuscate.strings"
     );
     assertNoUnknownKeys(numbers, ["enabled", "method", "offset", "operator"], "obfuscate.numbers");
@@ -62,6 +62,11 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             strings: {
                 enabled: readOptionalBoolean(strings, "enabled", "obfuscate.strings.enabled"),
                 encode: readOptionalBoolean(strings, "encode", "obfuscate.strings.encode"),
+                unicode_escape_sequence: readOptionalBoolean(
+                    strings,
+                    "unicode_escape_sequence",
+                    "obfuscate.strings.unicode_escape_sequence"
+                ),
                 method: readOptionalStringMethod(strings, "method", "obfuscate.strings.method"),
                 split_length: readOptionalPositiveInteger(
                     strings,

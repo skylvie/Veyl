@@ -42,6 +42,7 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 		"strings": {
 			"enabled": true, // Do string obfuscation
 			"encode": true, // Encode string chunks before runtime decode
+			"unicode_escape_sequence": false, // Emit visible \\uXXXX string literals
 			"method": "array", // "array" or "split"
 			"split_length": 3 // Chunk length when using split string obfuscation
 		},
@@ -80,6 +81,7 @@ You can also use CLI flags instead:
 ```
 --strings-enabled=true|false
 --strings-encode=true|false
+--strings-ues=true|false
 --strings-method=array|split
 --strings-split-length=<num>
 --numbers-enabled=true|false
@@ -168,7 +170,6 @@ console.log(result.code);
 - [ ] Customizable identifier renaming
     - [ ] Different scope levels
     - [ ] Different name types
-    - [ ] Unicode escape sequences 
 - [ ] Additional string encoding methods
 - [ ] Encrypted payloads with decryption key passed in
 - [ ] `node:vm`
@@ -233,7 +234,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Dead code injection can insert unreachable decoy control flow and computations so the transformed program looks busier than the logic it actually executes.
 - Control flow flattening can rewrite eligible straight-line statement runs into a randomized dispatcher loop so the original execution order is hidden behind a state machine.
 - Simplify can merge declarations and expression chains, compact `if/else` returns into conditional expressions, and fold expression tails into comma-expression returns.
-- String literals can be obfuscated through either a randomized string table or inline split concatenation. When `obfuscate.strings.encode` is enabled, chunks are encoded with base64, bit rotation, and XOR before runtime decode.
+- String literals can be obfuscated through either a randomized string table or inline split concatenation. `obfuscate.strings.unicode_escape_sequence` is a separate layer that rewrites emitted string literals as visible `\uXXXX` escape sequences while preserving the same runtime value, and it can be used by itself or together with either string obfuscation method. When `obfuscate.strings.encode` is enabled, chunks are encoded with base64, bit rotation, and XOR before runtime decode.
 - Number literals can use either `obfuscate.numbers.method: "offset"` or `"equation"`. `offset` replaces numbers with runtime decoder calls using a randomized additive or multiplicative shift, while `equation` rewrites numbers into direct arithmetic expressions that evaluate to the same value. `obfuscate.numbers.offset` and `obfuscate.numbers.operator` only apply to `offset`.
 - Boolean literals can use either `obfuscate.booleans.method: "number"` or `"depth"`. `number` replaces booleans with calls to a runtime decoder that compares randomized numeric tokens, while `depth` emits direct negation chains like `!![]` and `![]`. `obfuscate.booleans.depth` accepts a positive integer, `"randomized"`, or `null` for the default depth behavior.
 - When `features.functionify` is enabled, Veyl stringifies the transformed program body, obfuscates that body string, and executes it through `new Function(...)` while passing imported bindings and helper functions in as runtime arguments.

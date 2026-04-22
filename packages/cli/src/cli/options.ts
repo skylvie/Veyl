@@ -46,6 +46,12 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--strings-ues, --strings_ues <true|false>",
+                "Emit string literals using unicode escape sequences."
+            ).argParser((value: string) => parseBoolean(value, "--strings-ues"))
+        )
+        .addOption(
+            new Option(
                 "--strings-method, --strings_method <array|split>",
                 "String obfuscation method."
             ).argParser((value: string) => parseStringMethod(value, "--strings-method"))
@@ -207,6 +213,9 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
     const stringsEncode = readAliasedOption(parsed, "stringsEncode", "strings_encode") as
         | boolean
         | undefined;
+    const stringsUes = readAliasedOption(parsed, "stringsUes", "strings_ues") as
+        | boolean
+        | undefined;
     const stringsMethod = readAliasedOption(parsed, "stringsMethod", "strings_method") as
         | StringObfuscationMethod
         | undefined;
@@ -280,6 +289,16 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
             obfuscate: {
                 strings: {
                     encode: stringsEncode,
+                },
+            },
+        });
+    }
+
+    if (stringsUes !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                strings: {
+                    unicode_escape_sequence: stringsUes,
                 },
             },
         });
@@ -560,6 +579,7 @@ interface CommanderCliOptions {
     config?: string;
     stringsEnabled?: boolean;
     stringsEncode?: boolean;
+    stringsUes?: boolean;
     stringsMethod?: StringObfuscationMethod;
     stringsSplitLength?: number;
     numbersEnabled?: boolean;

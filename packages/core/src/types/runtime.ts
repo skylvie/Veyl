@@ -4,6 +4,7 @@ export interface RuntimeHelperOptions {
     strings?: {
         method: "array" | "split";
         encode: boolean;
+        unicodeEscapeSequence: boolean;
         decoderName: string;
         tableName?: string;
         accessorName?: string;

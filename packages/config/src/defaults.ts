@@ -9,6 +9,7 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         strings: {
             enabled: true,
             encode: true,
+            unicode_escape_sequence: false,
             method: "array",
             split_length: 3,
         },

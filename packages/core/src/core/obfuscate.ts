@@ -17,6 +17,7 @@ import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
 import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
 import type { RuntimeHelperOptions } from "../types/runtime.js";
 import { encodeStringLiteralValue, NameGenerator } from "../utils/random.js";
+import { createStringLiteralNode } from "../utils/stringLiteral.js";
 import { bundleInput, compactOutput } from "./bundler.js";
 
 /**
@@ -144,6 +145,7 @@ function functionifyProgram(
                 method: StringObfuscationMethod;
                 split_length: number;
                 encode: boolean;
+                unicode_escape_sequence: boolean;
             };
         };
     }
@@ -268,6 +270,7 @@ function addFunctionifiedBodyString(
                 method: StringObfuscationMethod;
                 split_length: number;
                 encode: boolean;
+                unicode_escape_sequence: boolean;
             };
         };
     }
@@ -277,6 +280,7 @@ function addFunctionifiedBodyString(
             method: config.obfuscate.strings.method,
             decoderName: names.freshIdentifier(),
             encode: config.obfuscate.strings.encode,
+            unicodeEscapeSequence: config.obfuscate.strings.unicode_escape_sequence,
             xorKey: crypto.randomInt(1, 256),
         };
 
@@ -294,7 +298,8 @@ function addFunctionifiedBodyString(
             bodyCode,
             runtimeOptions.strings.xorKey,
             config.obfuscate.strings.split_length,
-            runtimeOptions.strings.encode
+            runtimeOptions.strings.encode,
+            runtimeOptions.strings.unicodeEscapeSequence
         );
     }
 
@@ -368,17 +373,21 @@ function buildSplitStringExpression(
     literalValue: string,
     stringXorKey: number,
     stringSplitLength: number,
-    encode: boolean
+    encode: boolean,
+    unicodeEscapeSequence: boolean
 ): t.Expression {
     const parts = splitPlainString(literalValue, stringSplitLength).map((chunk) =>
         encode
             ? t.callExpression(t.identifier(stringDecoderName), [
-                  t.stringLiteral(encodeStringLiteralValue(chunk, stringXorKey)),
+                  createStringLiteralNode(
+                      encodeStringLiteralValue(chunk, stringXorKey),
+                      unicodeEscapeSequence
+                  ),
               ])
-            : t.stringLiteral(chunk)
+            : createStringLiteralNode(chunk, unicodeEscapeSequence)
     );
 
-    let output: t.Expression = parts[0] ?? t.stringLiteral("");
+    let output: t.Expression = parts[0] ?? createStringLiteralNode("", unicodeEscapeSequence);
 
     for (let i = 1; i < parts.length; i++) {
         output = t.binaryExpression("+", output, parts[i]);

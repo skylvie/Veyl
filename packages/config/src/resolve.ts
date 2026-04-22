@@ -20,6 +20,9 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
                 encode:
                     input?.obfuscate?.strings?.encode ??
                     DEFAULT_OBFUSCATION_CONFIG.obfuscate.strings.encode,
+                unicode_escape_sequence:
+                    input?.obfuscate?.strings?.unicode_escape_sequence ??
+                    DEFAULT_OBFUSCATION_CONFIG.obfuscate.strings.unicode_escape_sequence,
                 method:
                     input?.obfuscate?.strings?.method ??
                     DEFAULT_OBFUSCATION_CONFIG.obfuscate.strings.method,
@@ -132,6 +135,10 @@ function validateConfig(config: ObfuscationConfig): void {
 
     if (typeof config.obfuscate.strings.encode !== "boolean") {
         throw new Error("obfuscate.strings.encode must be true or false");
+    }
+
+    if (typeof config.obfuscate.strings.unicode_escape_sequence !== "boolean") {
+        throw new Error("obfuscate.strings.unicode_escape_sequence must be true or false");
     }
 
     if (!isStringObfuscationMethod(config.obfuscate.strings.method)) {

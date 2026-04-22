@@ -54,6 +54,9 @@ function printConfigSummary(
     logger.debug(
         `  string encoding:                ${formatBoolean(config.obfuscate.strings.encode)}\n`
     );
+    logger.debug(
+        `  string unicode escapes:         ${formatBoolean(config.obfuscate.strings.unicode_escape_sequence)}\n`
+    );
     logger.debug(`  string method:                  ${config.obfuscate.strings.method}\n`);
     logger.debug(`  string split length:            ${config.obfuscate.strings.split_length}\n`);
     logger.debug(

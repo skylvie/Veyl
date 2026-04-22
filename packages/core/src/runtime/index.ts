@@ -27,7 +27,8 @@ export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[
                     options.strings.decoderName,
                     options.strings.encodedTable,
                     options.strings.orderTable ?? [],
-                    options.strings.encode
+                    options.strings.encode,
+                    options.strings.unicodeEscapeSequence
                 )
             );
         }

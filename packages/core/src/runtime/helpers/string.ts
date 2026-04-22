@@ -1,4 +1,5 @@
 import * as t from "@babel/types";
+import { createStringLiteralNode } from "../../utils/stringLiteral.js";
 
 export function buildStringRuntimeHelpers(
     stringDecoderName: string,
@@ -231,10 +232,13 @@ export function buildStringTableRuntimeHelpers(
     stringDecoderName: string,
     encodedTable: string[][],
     orderTable: number[][],
-    encode: boolean
+    encode: boolean,
+    unicodeEscapeSequence: boolean
 ): t.Statement[] {
     const tableElements = encodedTable.map((parts) =>
-        t.arrayExpression(parts.map((value) => t.stringLiteral(value)))
+        t.arrayExpression(
+            parts.map((value) => createStringLiteralNode(value, unicodeEscapeSequence))
+        )
     );
     const orderElements = orderTable.map((parts) =>
         t.arrayExpression(parts.map((value) => t.numericLiteral(value)))
@@ -319,7 +323,7 @@ export function buildStringTableRuntimeHelpers(
             t.returnStatement(
                 t.callExpression(
                     t.memberExpression(t.identifier("restored"), t.identifier("join")),
-                    [t.stringLiteral(" ")]
+                    [createStringLiteralNode(" ", unicodeEscapeSequence)]
                 )
             ),
         ])
