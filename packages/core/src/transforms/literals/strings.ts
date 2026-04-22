@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import * as t from "@babel/types";
 import type { ObfuscationConfig, StringObfuscationMethod } from "@skylvi/veyl-config";
 import { traverse } from "../../babel/interop.js";
@@ -9,6 +8,7 @@ import {
 } from "../../babel/predicates.js";
 import type { BabelNode, BabelNodePath } from "../../types/babel.js";
 import type { LiteralObfuscationResult } from "../../types/transforms.js";
+import { randomInt } from "../../utils/platform.js";
 import type { NameGenerator } from "../../utils/random.js";
 import { encodeStringLiteralValue } from "../../utils/random.js";
 import { createStringLiteralNode } from "../../utils/stringLiteral.js";
@@ -33,7 +33,7 @@ export function obfuscateStringLiterals(
     }
 
     const stringDecoderName = names.freshIdentifier();
-    const stringXorKey = crypto.randomInt(1, 256);
+    const stringXorKey = randomInt(1, 256);
     const stringEncode = config.obfuscate.strings.encode;
     const stringMethod = stringObfuscationEnabled ? config.obfuscate.strings.method : null;
     const stringSplitLength = config.obfuscate.strings.split_length;
@@ -238,7 +238,7 @@ function buildStringObfuscatedExpression(
         throw new Error("array string obfuscation requires string table state");
     }
 
-    const pickAt = crypto.randomInt(0, stringTableState.availableIndices.length);
+    const pickAt = randomInt(0, stringTableState.availableIndices.length);
     const tableIndex = stringTableState.availableIndices[pickAt];
 
     stringTableState.availableIndices.splice(pickAt, 1);
@@ -297,7 +297,7 @@ function shuffleStringParts(parts: string[]): { parts: string[]; order: number[]
     const shuffled = parts.map((value, index) => ({ value, index }));
 
     for (let i = shuffled.length - 1; i > 0; i--) {
-        const pickAt = crypto.randomInt(0, i + 1);
+        const pickAt = randomInt(0, i + 1);
         const current = shuffled[i];
         shuffled[i] = shuffled[pickAt] as { value: string; index: number };
         shuffled[pickAt] = current as { value: string; index: number };

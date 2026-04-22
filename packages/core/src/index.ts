@@ -17,10 +17,12 @@ export {
 } from "@skylvi/veyl-config";
 export {
     obfuscateCode,
+    obfuscateEntry,
     obfuscateFile,
 } from "./core/obfuscate.js";
 export type {
     ObfuscateCodeResult,
+    ObfuscateEntryResult,
     ObfuscateFileOptions,
     ObfuscationStats,
 } from "./types/core.js";

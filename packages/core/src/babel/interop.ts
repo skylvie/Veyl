@@ -1,15 +1,14 @@
-import { createRequire } from "node:module";
+import generateModule from "@babel/generator";
+import traverseModule from "@babel/traverse";
 import type { GenerateFn, TraverseFn } from "../types/babel.js";
 
-/*
-    TS with `module: NodeNext` can resolve CJS Babel packages as module namespace values, 
-    so callable Babel packages are loaded through `createRequire`.
-*/
+const traverseValue = traverseModule as unknown as TraverseFn | { default?: TraverseFn };
+const generateValue = generateModule as unknown as GenerateFn | { default?: GenerateFn };
 
-const requireFromModule = createRequire(import.meta.url);
+export const traverse = (
+    typeof traverseValue === "function" ? traverseValue : traverseValue.default
+) as TraverseFn;
 
-export const traverse = (requireFromModule("@babel/traverse").default ??
-    requireFromModule("@babel/traverse")) as TraverseFn;
-
-export const generate = (requireFromModule("@babel/generator").default ??
-    requireFromModule("@babel/generator")) as GenerateFn;
+export const generate = (
+    typeof generateValue === "function" ? generateValue : generateValue.default
+) as GenerateFn;

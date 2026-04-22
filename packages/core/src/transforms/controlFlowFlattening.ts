@@ -1,6 +1,6 @@
-import crypto from "node:crypto";
 import * as t from "@babel/types";
 import type { ControlFlowFlatteningResult } from "../types/transforms.js";
+import { randomInt } from "../utils/platform.js";
 import type { NameGenerator } from "../utils/random.js";
 
 // Rewrites eligible straight-line statement runs into a dispatcher loop state machine
@@ -451,12 +451,12 @@ function nodeContainsIdentifierName(node: unknown, names: Set<string>): boolean 
 }
 
 function randomStateValue(): number {
-    return crypto.randomInt(1000, 1_000_000);
+    return randomInt(1000, 1_000_000);
 }
 
 function shuffleInPlace(values: number[]): void {
     for (let index = values.length - 1; index > 0; index--) {
-        const swapIndex = crypto.randomInt(0, index + 1);
+        const swapIndex = randomInt(0, index + 1);
         const current = values[index] as number;
 
         values[index] = values[swapIndex] as number;

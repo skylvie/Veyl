@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import type { LogLevel } from "@skylvi/veyl";
-import { mergeConfig, obfuscateFile, resolveConfig } from "@skylvi/veyl";
+import { mergeConfig, obfuscateEntry, obfuscateFile, resolveConfig } from "@skylvi/veyl";
 import { CommanderError } from "commander";
 import { loadCliConfig } from "./cli/config.js";
 import { buildCliProgram, parseCliArgs, readLogLevelFlag, resolveCliPaths } from "./cli/options.js";
@@ -25,13 +25,27 @@ async function main(): Promise<void> {
 
     printRunHeader(logger, resolved, loadedConfig.source);
 
-    const stats = await obfuscateFile({
-        input: resolved.input,
-        output: resolved.output,
-        config: configInput,
-    });
+    const result =
+        resolved.output === null
+            ? await obfuscateEntry({
+                  input: resolved.input,
+                  output: null,
+                  config: configInput,
+              })
+            : {
+                  code: null,
+                  stats: await obfuscateFile({
+                      input: resolved.input,
+                      output: resolved.output,
+                      config: configInput,
+                  }),
+              };
 
-    printStats(logger, stats, config);
+    printStats(logger, result.stats, config);
+
+    if (resolved.output === null && result.code !== null) {
+        process.stdout.write(result.code);
+    }
 }
 
 main().catch((error: unknown) => {

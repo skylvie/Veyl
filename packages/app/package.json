@@ -1,0 +1,29 @@
+{
+    "name": "@skylvi/veyl-app",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "typecheck": "tsc --project tsconfig.json --noEmit",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "typescript": "^6.0.3",
+        "vite": "^8.0.9"
+    },
+    "dependencies": {
+        "@monaco-editor/react": "^4.7.0",
+        "@skylvi/veyl": "workspace:*",
+        "@skylvi/veyl-config": "workspace:*",
+        "@tailwindcss/vite": "^4.2.4",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.1",
+        "monaco-editor": "^0.55.1",
+        "react": "^19.2.5",
+        "react-dom": "^19.2.5",
+        "tailwindcss": "^4.2.4"
+    }
+}

@@ -16,7 +16,12 @@ import { obfuscateLiterals } from "../transforms/literalObfuscator.js";
 import { renameProperties } from "../transforms/propertyRenamer.js";
 import { simplifyStatements } from "../transforms/simplifier.js";
 import { addUnnecessaryDepth } from "../transforms/unnecessaryDepth.js";
-import type { ObfuscateCodeResult, ObfuscateFileOptions, ObfuscationStats } from "../types/core.js";
+import type {
+    ObfuscateCodeResult,
+    ObfuscateEntryResult,
+    ObfuscateFileOptions,
+    ObfuscationStats,
+} from "../types/core.js";
 import { NameGenerator } from "../utils/random.js";
 import { bundleInput, compactOutput } from "./bundler.js";
 
@@ -27,9 +32,27 @@ import { bundleInput, compactOutput } from "./bundler.js";
  * This is the primary file-based API for using Veyl from another Node project.
  */
 export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<ObfuscationStats> {
+    const result = await obfuscateEntry(opts);
+
+    if (opts.output === null || opts.output === undefined) {
+        throw new Error("obfuscateFile requires an output path");
+    }
+
+    return result.stats;
+}
+
+/**
+ * Bundles a TypeScript or JavaScript entry file, obfuscates the bundled output,
+ * and returns both the emitted code and run statistics.
+ *
+ * When `opts.output` is provided the code is also written to disk; otherwise the
+ * caller can decide how to consume the emitted source.
+ */
+export async function obfuscateEntry(opts: ObfuscateFileOptions): Promise<ObfuscateEntryResult> {
     const startedAt = performance.now();
     const input = path.resolve(opts.input);
-    const output = path.resolve(opts.output);
+    const output =
+        opts.output === null || opts.output === undefined ? "<stdout>" : path.resolve(opts.output);
     const config = resolveConfig(opts.config);
 
     const bundle = await bundleInput(input);
@@ -38,27 +61,32 @@ export async function obfuscateFile(opts: ObfuscateFileOptions): Promise<Obfusca
         ? await compactOutput(transformed.code, !config.features.randomized_unique_identifiers)
         : transformed.code;
 
-    fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, outputCode, "utf-8");
+    if (opts.output !== null && opts.output !== undefined) {
+        fs.mkdirSync(path.dirname(output), { recursive: true });
+        fs.writeFileSync(output, outputCode, "utf-8");
+    }
 
     return {
-        input,
-        output,
-        bundledBytes: bundle.bytes,
-        outputBytes: outputCode.length,
-        renamedBindings: transformed.renamedBindings,
-        renamedProperties: transformed.renamedProperties,
-        addedDepthReferences: transformed.addedDepthReferences,
-        addedDeadCodeBlocks: transformed.addedDeadCodeBlocks,
-        flattenedControlFlowBlocks: transformed.flattenedControlFlowBlocks,
-        simplifiedStatements: transformed.simplifiedStatements,
-        obfuscatedStrings: transformed.obfuscatedStrings,
-        obfuscatedNumbers: transformed.obfuscatedNumbers,
-        obfuscatedBooleans: transformed.obfuscatedBooleans,
-        booleanObfuscationNumber: transformed.booleanObfuscationNumber,
-        numberObfuscationOffset: transformed.numberObfuscationOffset,
-        numberObfuscationOperators: transformed.numberObfuscationOperators,
-        elapsedMs: performance.now() - startedAt,
+        code: outputCode,
+        stats: {
+            input,
+            output,
+            bundledBytes: bundle.bytes,
+            outputBytes: outputCode.length,
+            renamedBindings: transformed.renamedBindings,
+            renamedProperties: transformed.renamedProperties,
+            addedDepthReferences: transformed.addedDepthReferences,
+            addedDeadCodeBlocks: transformed.addedDeadCodeBlocks,
+            flattenedControlFlowBlocks: transformed.flattenedControlFlowBlocks,
+            simplifiedStatements: transformed.simplifiedStatements,
+            obfuscatedStrings: transformed.obfuscatedStrings,
+            obfuscatedNumbers: transformed.obfuscatedNumbers,
+            obfuscatedBooleans: transformed.obfuscatedBooleans,
+            booleanObfuscationNumber: transformed.booleanObfuscationNumber,
+            numberObfuscationOffset: transformed.numberObfuscationOffset,
+            numberObfuscationOperators: transformed.numberObfuscationOperators,
+            elapsedMs: performance.now() - startedAt,
+        },
     };
 }
 

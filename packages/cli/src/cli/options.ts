@@ -18,7 +18,7 @@ export function resolveCliPaths(options: CliOptions, cwd: string): CliOptions {
     return {
         ...options,
         input: path.resolve(cwd, options.input),
-        output: path.resolve(cwd, options.output),
+        output: options.output === null ? null : path.resolve(cwd, options.output),
         configFile: options.configFile === null ? null : path.resolve(cwd, options.configFile),
         configOverrides: mergeConfig(options.configOverrides, {
             features: {
@@ -44,7 +44,7 @@ export function buildCliProgram(versionText: string): Command {
         .name("veyl")
         .description("A complete and customizable JavaScript and TypeScript obfuscation utility.")
         .requiredOption("-i, --input <path>", "Input TS or JS file to bundle and obfuscate.")
-        .requiredOption("-o, --output <path>", "Output JS file to write.")
+        .option("-o, --output <path>", "Output JS file to write. Defaults to stdout.")
         .option(
             "-c, --config <path>",
             `Config JSON file. Defaults to ./${DEFAULT_CONFIG_FILE} when present.`
@@ -213,7 +213,7 @@ export function parseCliArgs(program: Command, argv: string[]): CliOptions {
 
     return {
         input: parsed.input,
-        output: parsed.output,
+        output: parsed.output ?? null,
         configFile: parsed.config ?? null,
         configOverrides: buildConfigOverrides(parsed),
     };

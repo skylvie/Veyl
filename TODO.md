@@ -14,5 +14,4 @@
 - [ ] Self defending
 
 ## Other
-- [ ] Webapp Demo
 - [ ] Anti debug gets its own package

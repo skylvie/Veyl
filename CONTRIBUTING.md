@@ -17,13 +17,16 @@ If you are contributing from a fork, push your work to your fork and open a PR f
 
 ## Common Commands
 ```sh
-pnpm test
-pnpm lint
-pnpm lint:fix
-pnpm format
-pnpm check
-pnpm typecheck
-pnpm build
+pnpm cli # `node packages/cli/dist/index.js`
+pnpm dev # vite dev (`packages/app`)
+pnpm preview # vite preview (`packages/app`)
+pnpm test # run test suite
+pnpm lint # biome
+pnpm lint:fix # biome
+pnpm format # biome
+pnpm check # biome
+pnpm typecheck # typecheck all packages
+pnpm build # build all packages
 ```
 
 ## Required Checks
@@ -48,6 +51,7 @@ pnpm test --test=test_name # Run specific test
 ## Workspace Layout
 ```text
 packages/
+  app/    # Vite + Monaco browser playground
   config/ # local config parsing/resolution package
   core/   # @skylvi/veyl API package
   cli/    # @skylvi/veyl-cli executable package

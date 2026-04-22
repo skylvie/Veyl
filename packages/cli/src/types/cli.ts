@@ -2,7 +2,7 @@ import type { ObfuscationConfigInput } from "@skylvi/veyl";
 
 export interface CliOptions {
     input: string;
-    output: string;
+    output: string | null;
     configFile: string | null;
     configOverrides: ObfuscationConfigInput;
 }
