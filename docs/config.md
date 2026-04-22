@@ -4,32 +4,32 @@ Veyl uses a JSON config file. By default it looks for `veyl_config.json`, but yo
 Example:
 ```jsonc
 {
-	"log_level": "info",
-	"minify": true,
+	"log_level": "info", // "none", "error", "info", "debug"
+	"minify": true, // Minify output
 	"obfuscate": {
 		"strings": {
 			"enabled": true, // Do string obfuscation
 			"encode": true, // Encode string chunks before runtime decode
 			"unicode_escape_sequence": false, // Emit visible \\uXXXX string literals
-			"method": "array", // "array" or "split"
+			"method": "array", // "array", "split"
 			"split_length": 3 // Chunk length when using split string obfuscation
 		},
 		"numbers": {
 			"enabled": true, // Do number obfuscation
-			"method": "offset", // "offset" or "equation"
+			"method": "offset", // "offset", "equation"
 			"offset": null, // Number offset or "randomized"/null, only for "offset"
 			"operator": null // "+-", "*/", or "randomized"/null, only for "offset"
 		},
 		"booleans": {
 			"enabled": true, // Do boolean obfuscation
-			"method": "number", // "number" or "depth"
+			"method": "number", // "number", "depth"
 			"number": null, // Number token or "randomized"/null, only for "number"
-			"depth": null // Positive integer, "randomized", or null for default ![] / !![]
+			"depth": null // Positive integer, "randomized", or null for default ![] / !![], only for "depth"
 		}
 	},
 	"features": {
 		"randomized_unique_identifiers": true, // Randomize identifiers (e.g. `_0x1a2b3c`)
-		"unnecessary_depth": false, // Add "unnecessary" depth (explained in "How It Works" section)
+		"unnecessary_depth": false, // Add "unnecessary" depth
 		"dead_code_injection": false, // Insert unreachable decoy code blocks
 		"control_flow_flattening": false, // Flatten eligible statement runs into a state machine
 		"simplify": false, // Apply compacting rewrites such as merged declarations and conditional returns
@@ -37,9 +37,3 @@ Example:
 	}
 }
 ```
-
-## Log Levels
-- `none`
-- `error`
-- `info`
-- `debug`
