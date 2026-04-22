@@ -35,5 +35,9 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         functionify: false,
         evalify: false,
         node_vm: false,
+        encryption: {
+            public_key: null,
+            private_key: null,
+        },
     },
 };

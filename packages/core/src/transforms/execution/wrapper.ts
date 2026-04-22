@@ -4,12 +4,17 @@ import { generate } from "../../babel/interop.js";
 import type { RuntimeHelperOptions } from "../../types/runtime.js";
 import type { NameGenerator } from "../../utils/random.js";
 import { addWrappedBodyString } from "./bodyString.js";
+import { buildEncryptedPayload, hasEncryptedPayload } from "./encryption.js";
 
 interface ExecutionWrapperConfig {
     features: {
         evalify: boolean;
         functionify: boolean;
         node_vm: boolean;
+        encryption: {
+            public_key: string | null;
+            private_key: string | null;
+        };
     };
     obfuscate: {
         strings: {
@@ -49,11 +54,11 @@ export function wrapProgramWithExecutionMode(
     runtimeOptions: RuntimeHelperOptions,
     config: ExecutionWrapperConfig,
     mode: ExecutionWrapperMode
-): void {
+): number {
     const program = (ast as { program?: { body?: t.Statement[] } }).program;
 
     if (program?.body === undefined) {
-        return;
+        return 0;
     }
 
     let importCount = 0;
@@ -66,7 +71,7 @@ export function wrapProgramWithExecutionMode(
     const bodyStatements = program.body.slice(importCount);
 
     if (bodyStatements.length === 0) {
-        return;
+        return 0;
     }
 
     if (bodyStatements.some((statement) => t.isExportDeclaration(statement))) {
@@ -77,14 +82,24 @@ export function wrapProgramWithExecutionMode(
         comments: false,
         compact: false,
     }).code;
-    const bodyStringExpression = addWrappedBodyString(runtimeOptions, names, bodyCode, config);
+    const encryptedPayload = hasEncryptedPayload(config)
+        ? buildEncryptedPayload(bodyCode, runtimeOptions, names, config)
+        : null;
+    const bodyStringExpression =
+        encryptedPayload?.bodyStringExpression ??
+        addWrappedBodyString(runtimeOptions, names, bodyCode, config);
     const importBindingNames = collectTopLevelBindingNames(imports);
     const runtimeBindingNames = collectRuntimeBindingNames(runtimeOptions);
+    const importStatements = encryptedPayload?.importStatements ?? [];
+    const setupStatements = encryptedPayload?.setupStatements ?? [];
+    const wrappedStringCount = encryptedPayload?.wrappedStringCount ?? 1;
 
     if (mode === "functionify") {
         const functionParamNames = [...importBindingNames, ...runtimeBindingNames];
         program.body = [
             ...imports,
+            ...importStatements,
+            ...setupStatements,
             t.expressionStatement(
                 t.callExpression(
                     t.newExpression(t.identifier("Function"), [
@@ -95,15 +110,19 @@ export function wrapProgramWithExecutionMode(
                 )
             ),
         ];
-        return;
+
+        return wrappedStringCount;
     }
 
     if (mode === "evalify") {
         program.body = [
             ...imports,
+            ...importStatements,
+            ...setupStatements,
             t.expressionStatement(t.callExpression(t.identifier("eval"), [bodyStringExpression])),
         ];
-        return;
+
+        return wrappedStringCount;
     }
 
     const createContextName = names.freshIdentifier();
@@ -116,6 +135,7 @@ export function wrapProgramWithExecutionMode(
 
     program.body = [
         ...imports,
+        ...importStatements,
         t.importDeclaration(
             [
                 t.importSpecifier(t.identifier(createContextName), t.identifier("createContext")),
@@ -135,6 +155,7 @@ export function wrapProgramWithExecutionMode(
                 ])
             ),
         ]),
+        ...setupStatements,
         t.expressionStatement(
             t.callExpression(t.identifier(runInContextName), [
                 bodyStringExpression,
@@ -142,6 +163,8 @@ export function wrapProgramWithExecutionMode(
             ])
         ),
     ];
+
+    return wrappedStringCount;
 }
 
 function collectTopLevelBindingNames(statements: t.Statement[]): string[] {

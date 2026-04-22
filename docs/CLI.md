@@ -44,6 +44,8 @@ veyl -i ./input.ts -o ./output.js
 --functionify=true|false
 --evalify=true|false
 --node-vm=true|false
+--public-key=./path_to_public_key
+--private-key=./path_to_private_key
 --dead-code-injection=true|false
 --control-flow-flattening=true|false
 --simplify=true|false
@@ -52,6 +54,7 @@ veyl -i ./input.ts -o ./output.js
 ```
 
 Only one of `--functionify`, `--evalify`, or `--node-vm` can be enabled at a time.
+`--public-key` and `--private-key` can only be used with one of those wrapper modes.
 
 ## Log Levels
 - `none`: print nothing

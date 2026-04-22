@@ -18,6 +18,10 @@ const stats = await obfuscateFile({
             functionify: true,
             evalify: false,
             node_vm: false,
+            encryption: {
+                public_key: null,
+                private_key: null,
+            },
         },
     },
 });
@@ -40,6 +44,10 @@ const result = obfuscateCode("const answer = 42; console.log(answer);", {
         functionify: false,
         evalify: false,
         node_vm: false,
+        encryption: {
+            public_key: null,
+            private_key: null,
+        },
     },
 });
 

@@ -12,11 +12,28 @@ import { Command, InvalidArgumentError, Option } from "commander";
 import type { CliOptions } from "../types/cli.js";
 
 export function resolveCliPaths(options: CliOptions, cwd: string): CliOptions {
+    const publicKeyPath = options.configOverrides.features?.encryption?.public_key;
+    const privateKeyPath = options.configOverrides.features?.encryption?.private_key;
+
     return {
         ...options,
         input: path.resolve(cwd, options.input),
         output: path.resolve(cwd, options.output),
         configFile: options.configFile === null ? null : path.resolve(cwd, options.configFile),
+        configOverrides: mergeConfig(options.configOverrides, {
+            features: {
+                encryption: {
+                    public_key:
+                        publicKeyPath === undefined || publicKeyPath === null
+                            ? publicKeyPath
+                            : path.resolve(cwd, publicKeyPath),
+                    private_key:
+                        privateKeyPath === undefined || privateKeyPath === null
+                            ? privateKeyPath
+                            : path.resolve(cwd, privateKeyPath),
+                },
+            },
+        }),
     };
 }
 
@@ -141,6 +158,18 @@ export function buildCliProgram(versionText: string): Command {
                 "--node-vm, --node_vm <true|false>",
                 "Run the transformed program body through `node:vm` using a created context."
             ).argParser((value: string) => parseBoolean(value, "--node-vm"))
+        )
+        .addOption(
+            new Option(
+                "--public-key, --public_key <path>",
+                "Encrypt wrapped payloads with the given public key."
+            )
+        )
+        .addOption(
+            new Option(
+                "--private-key, --private_key <path>",
+                "Embed the given private key to decrypt wrapped payloads at runtime."
+            )
         )
         .addOption(
             new Option(
@@ -285,6 +314,8 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
         | undefined;
     const evalify = readAliasedOption(parsed, "evalify", "evalify") as boolean | undefined;
     const nodeVm = readAliasedOption(parsed, "nodeVm", "node_vm") as boolean | undefined;
+    const publicKey = readAliasedOption(parsed, "publicKey", "public_key") as string | undefined;
+    const privateKey = readAliasedOption(parsed, "privateKey", "private_key") as string | undefined;
     const logLevel = readAliasedOption(parsed, "logLevel", "log_level") as LogLevel | undefined;
     let configOverrides: ObfuscationConfigInput = {};
 
@@ -452,6 +483,17 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
         configOverrides = mergeConfig(configOverrides, {
             features: {
                 node_vm: nodeVm,
+            },
+        });
+    }
+
+    if (publicKey !== undefined || privateKey !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                encryption: {
+                    public_key: publicKey,
+                    private_key: privateKey,
+                },
             },
         });
     }
@@ -625,6 +667,8 @@ interface CommanderCliOptions {
     functionify?: boolean;
     evalify?: boolean;
     nodeVm?: boolean;
+    publicKey?: string;
+    privateKey?: string;
     deadCodeInjection?: boolean;
     controlFlowFlattening?: boolean;
     simplify?: boolean;

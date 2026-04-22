@@ -104,14 +104,13 @@ export function obfuscateCode(
     const executionWrapperMode = resolveExecutionWrapperMode(config.features);
 
     if (executionWrapperMode !== null) {
-        wrapProgramWithExecutionMode(
+        literalResult.stringCount += wrapProgramWithExecutionMode(
             ast,
             names,
             literalResult.runtimeOptions,
             config,
             executionWrapperMode
         );
-        literalResult.stringCount++;
     }
 
     const helperNodes = buildRuntimeHelpers(literalResult.runtimeOptions);

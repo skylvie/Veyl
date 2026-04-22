@@ -33,6 +33,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
     const numbers = obfuscate === undefined ? undefined : readObject(obfuscate, "numbers");
     const booleans = obfuscate === undefined ? undefined : readObject(obfuscate, "booleans");
     const features = readObject(parsed, "features");
+    const encryption = features === undefined ? undefined : readObject(features, "encryption");
 
     assertNoUnknownKeys(obfuscate, ["strings", "numbers", "booleans"], "obfuscate");
     assertNoUnknownKeys(
@@ -53,9 +54,11 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             "functionify",
             "evalify",
             "node_vm",
+            "encryption",
         ],
         "features"
     );
+    assertNoUnknownKeys(encryption, ["public_key", "private_key"], "features.encryption");
 
     return {
         log_level: readOptionalLogLevel(parsed, "log_level", "log_level"),
@@ -118,6 +121,18 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             functionify: readOptionalBoolean(features, "functionify", "features.functionify"),
             evalify: readOptionalBoolean(features, "evalify", "features.evalify"),
             node_vm: readOptionalBoolean(features, "node_vm", "features.node_vm"),
+            encryption: {
+                public_key: readOptionalStringOrNull(
+                    encryption,
+                    "public_key",
+                    "features.encryption.public_key"
+                ),
+                private_key: readOptionalStringOrNull(
+                    encryption,
+                    "private_key",
+                    "features.encryption.private_key"
+                ),
+            },
         },
     };
 }
@@ -213,6 +228,26 @@ function readOptionalNumberOrNull(
 
     if (typeof input[key] !== "number") {
         throw new Error(`${label} must be a number, null, or "randomized"`);
+    }
+
+    return input[key];
+}
+
+function readOptionalStringOrNull(
+    input: Record<string, unknown> | undefined,
+    key: string,
+    label: string
+): string | null | undefined {
+    if (input === undefined || input[key] === undefined) {
+        return undefined;
+    }
+
+    if (input[key] === null) {
+        return null;
+    }
+
+    if (typeof input[key] !== "string") {
+        throw new Error(`${label} must be a string path or null`);
     }
 
     return input[key];
