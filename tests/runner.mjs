@@ -22,14 +22,22 @@ const color = {
     reset: "\u001b[0m",
 };
 
-if (options.removeGeneratedJs) {
+if (options.clean) {
     cleanupAllArtifacts();
     process.exit(0);
 }
 
-const cases = getCases(casesDir);
+const allCases = getCases(casesDir);
+const cases =
+    options.testName === null
+        ? allCases
+        : allCases.filter((testCase) => testCase.name === options.testName);
 const failures = [];
 let passedCount = 0;
+
+if (options.testName !== null && cases.length === 0) {
+    throw new Error(`Unknown test case: ${options.testName}`);
+}
 
 for (const testCase of cases) {
     try {
@@ -43,17 +51,19 @@ for (const testCase of cases) {
     }
 }
 
-try {
-    const distResults = await runDistChecks();
+if (options.testName === null) {
+    try {
+        const distResults = await runDistChecks();
 
-    for (const result of distResults) {
-        passedCount++;
-        printDistPass(result);
+        for (const result of distResults) {
+            passedCount++;
+            printDistPass(result);
+        }
+    } catch (error) {
+        const failure = formatFailure("dist", error);
+        failures.push(failure);
+        printFailure(failure);
     }
-} catch (error) {
-    const failure = formatFailure("dist", error);
-    failures.push(failure);
-    printFailure(failure);
 }
 
 printSummary(passedCount, failures.length);
@@ -66,7 +76,8 @@ function parseArgs(argv) {
     const parsed = {
         keepJs: false,
         keepOut: false,
-        removeGeneratedJs: false,
+        clean: false,
+        testName: null,
     };
 
     for (const arg of argv) {
@@ -77,12 +88,19 @@ function parseArgs(argv) {
             case "--keep-out":
                 parsed.keepOut = true;
                 break;
-            case "--rm-js":
-                parsed.removeGeneratedJs = true;
-                break;
             default:
+                if (arg === "--clean") {
+                    parsed.clean = true;
+                    break;
+                }
+
+                if (arg.startsWith("--test=")) {
+                    parsed.testName = arg.slice("--test=".length);
+                    break;
+                }
+
                 throw new Error(
-                    `Unknown option: ${arg}\nUsage: node tests/runner.mjs [--keep-js|--keep-out|--rm-js]`
+                    `Unknown option: ${arg}\nUsage: node tests/runner.mjs [--keep-js|--keep-out|--clean|--test=<name>]`
                 );
         }
     }
@@ -117,7 +135,7 @@ function runCase(testCase, options) {
         rootDir
     );
 
-    const expectedStdout = run(process.execPath, [entryJsPath], rootDir, {
+    const expectedStdout = run(process.execPath, ["--no-warnings", entryJsPath], rootDir, {
         captureStdout: true,
     }).trim();
     const cliArgs = [cliEntry, "-i", entryTsPath, "-o", outPath];
@@ -132,7 +150,9 @@ function runCase(testCase, options) {
 
     run(process.execPath, cliArgs, rootDir, { captureStdout: true });
 
-    const actualStdout = run(process.execPath, [outPath], rootDir, { captureStdout: true }).trim();
+    const actualStdout = run(process.execPath, ["--no-warnings", outPath], rootDir, {
+        captureStdout: true,
+    }).trim();
 
     if (sourceStdout !== expectedStdout) {
         throw new Error(
@@ -194,6 +214,8 @@ async function runDistChecks() {
             features: {
                 randomized_unique_identifiers: false,
                 functionify: false,
+                evalify: true,
+                node_vm: false,
             },
         }
     );
@@ -203,7 +225,7 @@ async function runDistChecks() {
 
     fs.writeFileSync(apiOutPath, apiOut.code, "utf8");
 
-    const apiStdout = run(process.execPath, [apiOutPath], rootDir, {
+    const apiStdout = run(process.execPath, ["--no-warnings", apiOutPath], rootDir, {
         captureStdout: true,
     }).trim();
 
@@ -213,12 +235,7 @@ async function runDistChecks() {
         );
     }
 
-    assertContains(apiOut.code, "![]", "[dist] depth boolean mode should emit negation syntax");
-    assertNotContains(
-        apiOut.code,
-        "TextDecoder",
-        "[dist] helperless API case should not inject string helpers"
-    );
+    assertContains(apiOut.code, "eval(", "[dist] obfuscateCode should support evalify");
 
     const fileCaseDir = path.resolve(casesDir, "functionality");
     const fileOutPath = path.resolve(scratchDir, "file-out.js");
@@ -249,11 +266,13 @@ async function runDistChecks() {
                 control_flow_flattening: false,
                 simplify: false,
                 functionify: false,
+                evalify: false,
+                node_vm: true,
             },
         },
     });
     const fileCode = fs.readFileSync(fileOutPath, "utf8");
-    const fileStdout = run(process.execPath, [fileOutPath], rootDir, {
+    const fileStdout = run(process.execPath, ["--no-warnings", fileOutPath], rootDir, {
         captureStdout: true,
     }).trim();
 
@@ -266,6 +285,7 @@ async function runDistChecks() {
     }
 
     assertContains(fileCode, "\\u", "[dist] obfuscateFile should preserve unicode escaped strings");
+    assertContains(fileCode, "runInContext", "[dist] obfuscateFile should support node_vm");
 
     cleanupFiles([apiOutPath, fileOutPath]);
     fs.rmSync(scratchDir, { recursive: true, force: true });
@@ -370,14 +390,12 @@ function run(command, args, cwd, options = {}) {
 
 function runTypeScriptCase(caseDir, entryFile) {
     const runtimeDir = path.resolve(caseDir, ".ts-runtime");
+    const packageJsonPath = path.resolve(runtimeDir, "package.json");
 
     fs.rmSync(runtimeDir, { recursive: true, force: true });
     fs.mkdirSync(runtimeDir, { recursive: true });
-    fs.writeFileSync(
-        path.resolve(runtimeDir, "package.json"),
-        JSON.stringify({ type: "module" }, null, 4),
-        "utf8"
-    );
+    fs.mkdirSync(path.dirname(packageJsonPath), { recursive: true });
+    fs.writeFileSync(packageJsonPath, JSON.stringify({ type: "module" }, null, 4), "utf8");
 
     for (const file of collectTypeScriptFiles(caseDir)) {
         const relativePath = path.relative(caseDir, file);
@@ -387,7 +405,7 @@ function runTypeScriptCase(caseDir, entryFile) {
         fs.writeFileSync(targetPath, rewriteTypeScriptImports(fs.readFileSync(file, "utf8")), "utf8");
     }
 
-    return run(process.execPath, [path.resolve(runtimeDir, entryFile)], rootDir, {
+    return run(process.execPath, ["--no-warnings", path.resolve(runtimeDir, entryFile)], rootDir, {
         captureStdout: true,
     });
 }

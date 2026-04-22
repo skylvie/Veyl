@@ -132,6 +132,18 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--evalify <true|false>",
+                "Wrap the transformed program body in a runtime `eval(...)` call."
+            ).argParser((value: string) => parseBoolean(value, "--evalify"))
+        )
+        .addOption(
+            new Option(
+                "--node-vm, --node_vm <true|false>",
+                "Run the transformed program body through `node:vm` using a created context."
+            ).argParser((value: string) => parseBoolean(value, "--node-vm"))
+        )
+        .addOption(
+            new Option(
                 "--dead-code-injection, --dead_code_injection <true|false>",
                 "Insert unreachable decoy code blocks throughout the transformed program."
             ).argParser((value: string) => parseBoolean(value, "--dead-code-injection"))
@@ -271,6 +283,8 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
     const unnecessaryDepth = readAliasedOption(parsed, "unnecessaryDepth", "unnecessary_depth") as
         | boolean
         | undefined;
+    const evalify = readAliasedOption(parsed, "evalify", "evalify") as boolean | undefined;
+    const nodeVm = readAliasedOption(parsed, "nodeVm", "node_vm") as boolean | undefined;
     const logLevel = readAliasedOption(parsed, "logLevel", "log_level") as LogLevel | undefined;
     let configOverrides: ObfuscationConfigInput = {};
 
@@ -422,6 +436,22 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
         configOverrides = mergeConfig(configOverrides, {
             features: {
                 functionify: parsed.functionify,
+            },
+        });
+    }
+
+    if (evalify !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                evalify,
+            },
+        });
+    }
+
+    if (nodeVm !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            features: {
+                node_vm: nodeVm,
             },
         });
     }
@@ -593,6 +623,8 @@ interface CommanderCliOptions {
     randomizedUniqueIdentifiers?: boolean;
     minify?: boolean;
     functionify?: boolean;
+    evalify?: boolean;
+    nodeVm?: boolean;
     deadCodeInjection?: boolean;
     controlFlowFlattening?: boolean;
     simplify?: boolean;

@@ -42,6 +42,8 @@ veyl -i ./input.ts -o ./output.js
 --randomized-unique-identifiers=true|false
 --minify=true|false
 --functionify=true|false
+--evalify=true|false
+--node-vm=true|false
 --dead-code-injection=true|false
 --control-flow-flattening=true|false
 --simplify=true|false
@@ -49,9 +51,10 @@ veyl -i ./input.ts -o ./output.js
 --log-level=none|error|info|debug
 ```
 
+Only one of `--functionify`, `--evalify`, or `--node-vm` can be enabled at a time.
+
 ## Log Levels
 - `none`: print nothing
 - `error`: print errors only
 - `info`: print progress updates only
 - `debug`: print paths, resolved config, and summary details
-

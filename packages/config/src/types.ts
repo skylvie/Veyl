@@ -36,6 +36,8 @@ export interface ObfuscationConfig {
         control_flow_flattening: boolean;
         simplify: boolean;
         functionify: boolean;
+        evalify: boolean;
+        node_vm: boolean;
     };
 }
 
@@ -70,5 +72,7 @@ export type ObfuscationConfigInput = Partial<{
         control_flow_flattening: boolean;
         simplify: boolean;
         functionify: boolean;
+        evalify: boolean;
+        node_vm: boolean;
     }>;
 }>;

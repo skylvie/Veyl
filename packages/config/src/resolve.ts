@@ -75,6 +75,8 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
             simplify: input?.features?.simplify ?? DEFAULT_OBFUSCATION_CONFIG.features.simplify,
             functionify:
                 input?.features?.functionify ?? DEFAULT_OBFUSCATION_CONFIG.features.functionify,
+            evalify: input?.features?.evalify ?? DEFAULT_OBFUSCATION_CONFIG.features.evalify,
+            node_vm: input?.features?.node_vm ?? DEFAULT_OBFUSCATION_CONFIG.features.node_vm,
         },
     };
 
@@ -116,6 +118,8 @@ export function mergeConfig(
                 base.features?.control_flow_flattening,
             simplify: override.features?.simplify ?? base.features?.simplify,
             functionify: override.features?.functionify ?? base.features?.functionify,
+            evalify: override.features?.evalify ?? base.features?.evalify,
+            node_vm: override.features?.node_vm ?? base.features?.node_vm,
         },
     };
 }
@@ -231,5 +235,25 @@ function validateConfig(config: ObfuscationConfig): void {
 
     if (typeof config.features.functionify !== "boolean") {
         throw new Error("features.functionify must be true or false");
+    }
+
+    if (typeof config.features.evalify !== "boolean") {
+        throw new Error("features.evalify must be true or false");
+    }
+
+    if (typeof config.features.node_vm !== "boolean") {
+        throw new Error("features.node_vm must be true or false");
+    }
+
+    const enabledExecutionWrappers = [
+        config.features.functionify,
+        config.features.evalify,
+        config.features.node_vm,
+    ].filter(Boolean).length;
+
+    if (enabledExecutionWrappers > 1) {
+        throw new Error(
+            "Only one of features.functionify, features.evalify, or features.node_vm can be enabled"
+        );
     }
 }

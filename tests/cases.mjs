@@ -180,6 +180,49 @@ export function getCases(casesDir) {
             },
         },
         {
+            name: "evalify",
+            dir: path.resolve(casesDir, "evalify"),
+            entry: "entry.ts",
+            configFile: "veyl_config.json",
+            validate(outputCode) {
+                assertContains(outputCode, "eval(", "evalify case should emit eval execution");
+                assertNotContains(
+                    outputCode,
+                    "new Function",
+                    "evalify case should not emit new Function"
+                );
+                assertNotContains(
+                    outputCode,
+                    "runInContext",
+                    "evalify case should not emit node:vm execution"
+                );
+            },
+        },
+        {
+            name: "node-vm",
+            dir: path.resolve(casesDir, "node-vm"),
+            entry: "entry.ts",
+            configFile: "veyl_config.json",
+            validate(outputCode) {
+                assertContains(outputCode, "node:vm", "node-vm case should import node:vm");
+                assertContains(
+                    outputCode,
+                    "createContext",
+                    "node-vm case should create a vm context"
+                );
+                assertContains(
+                    outputCode,
+                    "runInContext",
+                    "node-vm case should execute the wrapped body in vm"
+                );
+                assertNotContains(
+                    outputCode,
+                    "new Function",
+                    "node-vm case should not emit new Function"
+                );
+            },
+        },
+        {
             name: "minify",
             dir: path.resolve(casesDir, "minify"),
             entry: "entry.ts",

@@ -81,6 +81,11 @@ function printConfigSummary(
     );
     logger.debug(`  simplify:                       ${formatBoolean(config.features.simplify)}\n`);
     logger.debug(
+        `  functionify:                   ${formatBoolean(config.features.functionify)}\n`
+    );
+    logger.debug(`  evalify:                       ${formatBoolean(config.features.evalify)}\n`);
+    logger.debug(`  node vm:                       ${formatBoolean(config.features.node_vm)}\n`);
+    logger.debug(
         `  number offset:                  ${formatOptionalNumber(stats.numberObfuscationOffset)}\n`
     );
     logger.debug(

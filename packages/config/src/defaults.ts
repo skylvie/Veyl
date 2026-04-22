@@ -33,5 +33,7 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         control_flow_flattening: false,
         simplify: false,
         functionify: false,
+        evalify: false,
+        node_vm: false,
     },
 };

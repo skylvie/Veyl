@@ -1,0 +1,19 @@
+{
+    "log_level": "info",
+    "minify": false,
+    "obfuscate": {
+        "strings": { "enabled": true, "encode": true, "unicode_escape_sequence": false, "method": "split", "split_length": 2 },
+        "numbers": { "enabled": false, "method": "offset", "offset": 64, "operator": "+-" },
+        "booleans": { "enabled": false, "method": "number", "number": 12345, "depth": null }
+    },
+    "features": {
+        "randomized_unique_identifiers": true,
+        "unnecessary_depth": false,
+        "dead_code_injection": false,
+        "control_flow_flattening": false,
+        "simplify": false,
+        "functionify": false,
+        "evalify": true,
+        "node_vm": false
+    }
+}

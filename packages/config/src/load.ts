@@ -51,6 +51,8 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             "control_flow_flattening",
             "simplify",
             "functionify",
+            "evalify",
+            "node_vm",
         ],
         "features"
     );
@@ -114,6 +116,8 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             ),
             simplify: readOptionalBoolean(features, "simplify", "features.simplify"),
             functionify: readOptionalBoolean(features, "functionify", "features.functionify"),
+            evalify: readOptionalBoolean(features, "evalify", "features.evalify"),
+            node_vm: readOptionalBoolean(features, "node_vm", "features.node_vm"),
         },
     };
 }

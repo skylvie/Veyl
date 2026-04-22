@@ -16,6 +16,8 @@ const stats = await obfuscateFile({
         features: {
             randomized_unique_identifiers: true,
             functionify: true,
+            evalify: false,
+            node_vm: false,
         },
     },
 });
@@ -35,6 +37,9 @@ const result = obfuscateCode("const answer = 42; console.log(answer);", {
     },
     features: {
         randomized_unique_identifiers: true,
+        functionify: false,
+        evalify: false,
+        node_vm: false,
     },
 });
 

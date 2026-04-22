@@ -33,7 +33,11 @@ Example:
 		"dead_code_injection": false, // Insert unreachable decoy code blocks
 		"control_flow_flattening": false, // Flatten eligible statement runs into a state machine
 		"simplify": false, // Apply compacting rewrites such as merged declarations and conditional returns
-		"functionify": false // Run the final program body through `new Function(...)`
+		"functionify": false, // Run the final program body through `new Function(...)`
+		"evalify": false, // Run the final program body through `eval(...)`
+		"node_vm": false // Run the final program body through `node:vm`
 	}
 }
 ```
+
+Only one of `features.functionify`, `features.evalify`, or `features.node_vm` can be enabled at a time.
