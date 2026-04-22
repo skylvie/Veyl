@@ -8,7 +8,7 @@
         "lint:fix": "biome lint --write packages",
         "format": "biome format --write packages",
         "check": "biome check --write packages",
-        "test": "zsh ./test/test.sh",
+        "test": "node tests/runner.mjs",
         "cloc": "cloc --exclude-dir=dist,node_modules --exclude-lang=YAML ."
     },
     "devDependencies": {

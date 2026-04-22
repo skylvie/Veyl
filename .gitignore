@@ -1,9 +1,2 @@
 node_modules/
 dist/
-
-test/*.js
-
-veyl_config.json
-
-out.js
-meow.js
