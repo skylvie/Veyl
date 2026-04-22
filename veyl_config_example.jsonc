@@ -1,21 +1,24 @@
 {
-	"log_level": "info", // "none", "error", "info", or "debug" 
-	"minify": true, // Final esbuild minification
+	"log_level": "info",
+	"minify": true,
 	"obfuscate": {
 		"strings": {
 			"enabled": true, // Do string obfuscation
-			"encode": false, // Encode string chunks before runtime decode
-			"method": "split", // "array" or "split"
+			"encode": true, // Encode string chunks before runtime decode
+			"method": "array", // "array" or "split"
 			"split_length": 3 // Chunk length when using split string obfuscation
 		},
 		"numbers": {
 			"enabled": true, // Do number obfuscation
-			"offset": null, // Number offset or "randomized"/null
-			"operator": null // "+-", "*/", or "randomized"/null
+			"method": "offset", // "offset" or "equation"
+			"offset": null, // Number offset or "randomized"/null, only for "offset"
+			"operator": null // "+-", "*/", or "randomized"/null, only for "offset"
 		},
 		"booleans": {
 			"enabled": true, // Do boolean obfuscation
-			"number": null // Number token or "randomized"/null
+			"method": "number", // "number" or "depth"
+			"number": null, // Number token or "randomized"/null, only for "number"
+			"depth": null // Positive integer, "randomized", or null for default ![] / !![]
 		}
 	},
 	"features": {

@@ -1,5 +1,6 @@
 import { DEFAULT_OBFUSCATION_CONFIG } from "./defaults.js";
 import {
+    isBooleanObfuscationMethod,
     isLogLevel,
     isNumberObfuscationMethod,
     isNumberObfuscationOperatorFamily,
@@ -44,9 +45,15 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
                 enabled:
                     input?.obfuscate?.booleans?.enabled ??
                     DEFAULT_OBFUSCATION_CONFIG.obfuscate.booleans.enabled,
+                method:
+                    input?.obfuscate?.booleans?.method ??
+                    DEFAULT_OBFUSCATION_CONFIG.obfuscate.booleans.method,
                 number:
                     input?.obfuscate?.booleans?.number ??
                     DEFAULT_OBFUSCATION_CONFIG.obfuscate.booleans.number,
+                depth:
+                    input?.obfuscate?.booleans?.depth ??
+                    DEFAULT_OBFUSCATION_CONFIG.obfuscate.booleans.depth,
             },
         },
         features: {
@@ -174,11 +181,25 @@ function validateConfig(config: ObfuscationConfig): void {
         throw new Error("obfuscate.booleans.enabled must be true or false");
     }
 
+    if (!isBooleanObfuscationMethod(config.obfuscate.booleans.method)) {
+        throw new Error('obfuscate.booleans.method must be "number" or "depth"');
+    }
+
     if (
         config.obfuscate.booleans.number !== null &&
         !Number.isFinite(config.obfuscate.booleans.number)
     ) {
         throw new Error("obfuscate.booleans.number must be a finite number");
+    }
+
+    if (
+        config.obfuscate.booleans.depth !== null &&
+        config.obfuscate.booleans.depth !== "randomized" &&
+        (!Number.isInteger(config.obfuscate.booleans.depth) || config.obfuscate.booleans.depth <= 0)
+    ) {
+        throw new Error(
+            'obfuscate.booleans.depth must be a positive integer, null, or "randomized"'
+        );
     }
 
     if (typeof config.features.randomized_unique_identifiers !== "boolean") {

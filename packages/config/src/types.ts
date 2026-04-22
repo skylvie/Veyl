@@ -1,6 +1,7 @@
 export type NumberObfuscationOperator = "+" | "-" | "*" | "/";
 export type NumberObfuscationOperatorFamily = "+-" | "*/";
 export type NumberObfuscationMethod = "offset" | "equation";
+export type BooleanObfuscationMethod = "number" | "depth";
 export type StringObfuscationMethod = "array" | "split";
 export type LogLevel = "none" | "error" | "info" | "debug";
 
@@ -22,7 +23,9 @@ export interface ObfuscationConfig {
         };
         booleans: {
             enabled: boolean;
+            method: BooleanObfuscationMethod;
             number: number | null;
+            depth: number | "randomized" | null;
         };
     };
     features: {
@@ -53,7 +56,9 @@ export type ObfuscationConfigInput = Partial<{
         }>;
         booleans: Partial<{
             enabled: boolean;
+            method: BooleanObfuscationMethod;
             number: number | null;
+            depth: number | "randomized" | null;
         }>;
     }>;
     features: Partial<{

@@ -46,7 +46,7 @@ export interface ObfuscationStats {
     obfuscatedNumbers: number;
     /** Number of boolean literals obfuscated. */
     obfuscatedBooleans: number;
-    /** Actual numeric token used for `true`, or null when boolean obfuscation was disabled. */
+    /** Actual numeric token used for `true`, or null when boolean obfuscation was disabled or uses depth mode. */
     booleanObfuscationNumber: number | null;
     /** Actual offset used for number obfuscation, or null when number obfuscation was disabled. */
     numberObfuscationOffset: number | null;
@@ -78,7 +78,7 @@ export interface ObfuscateCodeResult {
     obfuscatedNumbers: number;
     /** Number of boolean literals obfuscated. */
     obfuscatedBooleans: number;
-    /** Actual numeric token used for `true`, or null when boolean obfuscation was disabled. */
+    /** Actual numeric token used for `true`, or null when boolean obfuscation was disabled or uses depth mode. */
     booleanObfuscationNumber: number | null;
     /** Actual offset used for number obfuscation, or null when number obfuscation was disabled. */
     numberObfuscationOffset: number | null;

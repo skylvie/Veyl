@@ -20,7 +20,9 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         },
         booleans: {
             enabled: true,
+            method: "number",
             number: null,
+            depth: null,
         },
     },
     features: {

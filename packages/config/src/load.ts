@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_CONFIG_FILE } from "./defaults.js";
 import {
+    isBooleanObfuscationMethod,
     isLogLevel,
     isNumberObfuscationMethod,
     isNumberObfuscationOperatorFamily,
@@ -9,6 +10,7 @@ import {
     isStringObfuscationMethod,
 } from "./guards.js";
 import type {
+    BooleanObfuscationMethod,
     LogLevel,
     NumberObfuscationMethod,
     NumberObfuscationOperatorFamily,
@@ -39,7 +41,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
         "obfuscate.strings"
     );
     assertNoUnknownKeys(numbers, ["enabled", "method", "offset", "operator"], "obfuscate.numbers");
-    assertNoUnknownKeys(booleans, ["enabled", "number"], "obfuscate.booleans");
+    assertNoUnknownKeys(booleans, ["enabled", "method", "number", "depth"], "obfuscate.booleans");
     assertNoUnknownKeys(
         features,
         [
@@ -79,7 +81,9 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             },
             booleans: {
                 enabled: readOptionalBoolean(booleans, "enabled", "obfuscate.booleans.enabled"),
+                method: readOptionalBooleanMethod(booleans, "method", "obfuscate.booleans.method"),
                 number: readOptionalNumberOrNull(booleans, "number", "obfuscate.booleans.number"),
+                depth: readOptionalBooleanDepth(booleans, "depth", "obfuscate.booleans.depth"),
             },
         },
         features: {
@@ -255,6 +259,46 @@ function readOptionalStringMethod(
     }
 
     throw new Error(`${label} must be "array" or "split"`);
+}
+
+function readOptionalBooleanMethod(
+    input: Record<string, unknown> | undefined,
+    key: string,
+    label: string
+): BooleanObfuscationMethod | undefined {
+    if (input === undefined || input[key] === undefined) {
+        return undefined;
+    }
+
+    if (isBooleanObfuscationMethod(input[key])) {
+        return input[key];
+    }
+
+    throw new Error(`${label} must be "number" or "depth"`);
+}
+
+function readOptionalBooleanDepth(
+    input: Record<string, unknown> | undefined,
+    key: string,
+    label: string
+): number | "randomized" | null | undefined {
+    if (input === undefined || input[key] === undefined) {
+        return undefined;
+    }
+
+    if (input[key] === null) {
+        return null;
+    }
+
+    if (input[key] === "randomized") {
+        return "randomized";
+    }
+
+    if (!Number.isInteger(input[key]) || (input[key] as number) <= 0) {
+        throw new Error(`${label} must be a positive integer, null, or "randomized"`);
+    }
+
+    return input[key] as number;
 }
 
 function readOptionalPositiveInteger(

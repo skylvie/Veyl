@@ -53,7 +53,9 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 		},
 		"booleans": {
 			"enabled": true, // Do boolean obfuscation
-			"number": null // Number token or "randomized"/null
+			"method": "number", // "number" or "depth"
+			"number": null, // Number token or "randomized"/null, only for "number"
+			"depth": null // Positive integer, "randomized", or null for default ![] / !![]
 		}
 	},
 	"features": {
@@ -81,11 +83,13 @@ You can also use CLI flags instead:
 --strings-method=array|split
 --strings-split-length=<num>
 --numbers-enabled=true|false
---number-method=offset|equation
+--numbers-method=offset|equation
 --numbers-offset=<num|randomized>
 --numbers-operator=+-|*/|randomized
 --booleans-enabled=true|false
+--booleans-method=number|depth
 --booleans-number=<num|randomized>
+--boolean-depth=<num|randomized>
 --randomized-unique-identifiers=true|false
 --minify=true|false
 --functionify=true|false
@@ -134,7 +138,9 @@ const stats = await obfuscateFile({
             },
             booleans: {
                 enabled: true,
+                method: "number",
                 number: null,
+                depth: null,
             },
         },
         features: {
@@ -183,13 +189,10 @@ console.log(result.code);
 - `loadConfigFile(path)`: reads a config JSON file.
 - `loadDefaultConfigFile(cwd)`: reads `veyl_config.json` from a directory when present.
 - `DEFAULT_CONFIG_FILE` and `DEFAULT_OBFUSCATION_CONFIG`.
-- Types: `ObfuscationConfigInput`, `ObfuscationConfig`, `ObfuscationStats`, `ObfuscateFileOptions`, `ObfuscateCodeResult`, `LogLevel`, `NumberObfuscationMethod`, and `NumberObfuscationOperator`.
+- Types: `ObfuscationConfigInput`, `ObfuscationConfig`, `ObfuscationStats`, `ObfuscateFileOptions`, `ObfuscateCodeResult`, `LogLevel`, `NumberObfuscationMethod`, `BooleanObfuscationMethod`, and `NumberObfuscationOperator`.
 
 ## TODO
 ### Core Obfuscation Features
-- [ ] Expression option (`1*2/4+4-5`) for number obfuscation
-- [ ] Boolean obfuscation option for `true` -> `!![]` and `false` -> `![]`
-    - [ ] Randomized depth? (e.g. `!!!!!![]`)
 - [ ] Customizable identifier renaming
     - [ ] Different scope levels
     - [ ] Different name types
@@ -260,7 +263,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Simplify can merge declarations and expression chains, compact `if/else` returns into conditional expressions, and fold expression tails into comma-expression returns.
 - String literals can be obfuscated through either a randomized string table or inline split concatenation. When `obfuscate.strings.encode` is enabled, chunks are encoded with base64, bit rotation, and XOR before runtime decode.
 - Number literals can use either `obfuscate.numbers.method: "offset"` or `"equation"`. `offset` replaces numbers with runtime decoder calls using a randomized additive or multiplicative shift, while `equation` rewrites numbers into direct arithmetic expressions that evaluate to the same value. `obfuscate.numbers.offset` and `obfuscate.numbers.operator` only apply to `offset`.
-- Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
+- Boolean literals can use either `obfuscate.booleans.method: "number"` or `"depth"`. `number` replaces booleans with calls to a runtime decoder that compares randomized numeric tokens, while `depth` emits direct negation chains like `!![]` and `![]`. `obfuscate.booleans.depth` accepts a positive integer, `"randomized"`, or `null` for the default depth behavior.
 - When `features.functionify` is enabled, Veyl stringifies the transformed program body, obfuscates that body string, and executes it through `new Function(...)` while passing imported bindings and helper functions in as runtime arguments.
 
 Once the literals have been replaced, Veyl injects the runtime helper functions needed to decode or access them. It then runs another binding rename pass so the helper names are obfuscated too. By default, esbuild minifies the transformed JS while preserving the randomized identifiers, but you can disable that final minify step with `minify` or `--minify=false`.

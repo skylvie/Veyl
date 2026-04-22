@@ -14,6 +14,7 @@ export function obfuscateBooleanLiterals(
 ): { count: number; trueToken: number | null } {
     let booleanCount = 0;
     let booleanNumber: number | null = null;
+    const booleanMethod = config.obfuscate.booleans.method;
 
     if (!config.obfuscate.booleans.enabled) {
         return {
@@ -22,14 +23,19 @@ export function obfuscateBooleanLiterals(
         };
     }
 
-    const boolDecoderName = names.freshIdentifier();
-    const trueToken = config.obfuscate.booleans.number ?? crypto.randomInt(10000, 99999);
-    let falseToken = crypto.randomInt(10000, 99999);
+    let boolDecoderName: string | null = null;
+    let trueToken = 0;
+    let falseToken = 0;
 
-    booleanNumber = trueToken;
-
-    while (falseToken === trueToken) {
+    if (booleanMethod === "number") {
+        boolDecoderName = names.freshIdentifier();
+        trueToken = config.obfuscate.booleans.number ?? crypto.randomInt(10000, 99999);
         falseToken = crypto.randomInt(10000, 99999);
+        booleanNumber = trueToken;
+
+        while (falseToken === trueToken) {
+            falseToken = crypto.randomInt(10000, 99999);
+        }
     }
 
     traverse(ast, {
@@ -38,19 +44,25 @@ export function obfuscateBooleanLiterals(
                 return;
             }
 
-            const marker = pathNode.node.value ? trueToken : falseToken;
-
             pathNode.replaceWith(
-                t.callExpression(t.identifier(boolDecoderName), [
-                    t.numericLiteral(marker),
-                ]) as unknown as BabelNode
+                (booleanMethod === "number"
+                    ? buildBooleanNumberExpression(
+                          pathNode.node.value,
+                          boolDecoderName,
+                          trueToken,
+                          falseToken
+                      )
+                    : buildBooleanDepthExpression(
+                          pathNode.node.value,
+                          resolveBooleanDepth(config.obfuscate.booleans.depth)
+                      )) as unknown as BabelNode
             );
 
             booleanCount++;
         },
     });
 
-    if (booleanCount > 0) {
+    if (booleanCount > 0 && boolDecoderName !== null) {
         runtimeOptions.booleans = {
             decoderName: boolDecoderName,
             trueToken,
@@ -61,4 +73,48 @@ export function obfuscateBooleanLiterals(
         count: booleanCount,
         trueToken: booleanNumber,
     };
+}
+
+function buildBooleanNumberExpression(
+    value: boolean,
+    decoderName: string | null,
+    trueToken: number,
+    falseToken: number
+): t.CallExpression {
+    if (decoderName === null) {
+        throw new Error('boolean "number" obfuscation requires a decoder name');
+    }
+
+    return t.callExpression(t.identifier(decoderName), [
+        t.numericLiteral(value ? trueToken : falseToken),
+    ]);
+}
+
+function buildBooleanDepthExpression(value: boolean, baseDepth: number): t.Expression {
+    const negationCount = value
+        ? baseDepth % 2 === 0
+            ? baseDepth
+            : baseDepth + 1
+        : baseDepth % 2 === 1
+          ? baseDepth
+          : baseDepth + 1;
+    let output: t.Expression = t.arrayExpression([]);
+
+    for (let i = 0; i < negationCount; i++) {
+        output = t.unaryExpression("!", output, true);
+    }
+
+    return output;
+}
+
+function resolveBooleanDepth(configuredDepth: number | "randomized" | null): number {
+    if (configuredDepth === null) {
+        return 1;
+    }
+
+    if (configuredDepth === "randomized") {
+        return crypto.randomInt(1, 13);
+    }
+
+    return configuredDepth;
 }

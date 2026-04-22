@@ -1,4 +1,5 @@
 import type {
+    BooleanObfuscationMethod,
     LogLevel,
     NumberObfuscationMethod,
     NumberObfuscationOperatorFamily,
@@ -17,6 +18,10 @@ export function isNumberObfuscationOperatorFamily(
 
 export function isNumberObfuscationMethod(input: unknown): input is NumberObfuscationMethod {
     return input === "offset" || input === "equation";
+}
+
+export function isBooleanObfuscationMethod(input: unknown): input is BooleanObfuscationMethod {
+    return input === "number" || input === "depth";
 }
 
 export function isStringObfuscationMethod(input: unknown): input is StringObfuscationMethod {

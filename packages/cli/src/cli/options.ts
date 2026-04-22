@@ -1,5 +1,6 @@
 import path from "node:path";
 import type {
+    BooleanObfuscationMethod,
     LogLevel,
     NumberObfuscationMethod,
     NumberObfuscationOperatorFamily,
@@ -63,9 +64,9 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
-                "--number-method, --number_method <offset|equation>",
+                "--numbers-method, --numbers_method <offset|equation>",
                 "Number obfuscation method."
-            ).argParser((value: string) => parseNumberMethod(value, "--number-method"))
+            ).argParser((value: string) => parseNumberMethod(value, "--numbers-method"))
         )
         .addOption(
             new Option(
@@ -87,9 +88,23 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--booleans-method, --booleans_method <number|depth>",
+                "Boolean obfuscation method."
+            ).argParser((value: string) => parseBooleanMethod(value, "--booleans-method"))
+        )
+        .addOption(
+            new Option(
                 "--booleans-number, --booleans_number <num|randomized>",
                 "Numeric token used for obfuscated true values."
             ).argParser((value: string) => parseNumberOrRandomized(value, "--booleans-number"))
+        )
+        .addOption(
+            new Option(
+                "--boolean-depth, --boolean_depth <num|randomized>",
+                'Negation depth used by "depth" boolean obfuscation.'
+            ).argParser((value: string) =>
+                parsePositiveIntegerOrRandomized(value, "--boolean-depth")
+            )
         )
         .addOption(
             new Option(
@@ -203,7 +218,7 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
     const numbersEnabled = readAliasedOption(parsed, "numbersEnabled", "numbers_enabled") as
         | boolean
         | undefined;
-    const numberMethod = readAliasedOption(parsed, "numberMethod", "number_method") as
+    const numberMethod = readAliasedOption(parsed, "numbersMethod", "numbers_method") as
         | NumberObfuscationMethod
         | undefined;
     const numbersOffset = readAliasedOption(parsed, "numbersOffset", "numbers_offset") as
@@ -217,9 +232,16 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
     const booleansEnabled = readAliasedOption(parsed, "booleansEnabled", "booleans_enabled") as
         | boolean
         | undefined;
+    const booleansMethod = readAliasedOption(parsed, "booleansMethod", "booleans_method") as
+        | BooleanObfuscationMethod
+        | undefined;
     const booleansNumber = readAliasedOption(parsed, "booleansNumber", "booleans_number") as
         | number
         | null
+        | undefined;
+    const booleanDepth = readAliasedOption(parsed, "booleanDepth", "boolean_depth") as
+        | number
+        | "randomized"
         | undefined;
     const randomizedUniqueIdentifiers = readAliasedOption(
         parsed,
@@ -333,11 +355,31 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
         });
     }
 
+    if (booleansMethod !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                booleans: {
+                    method: booleansMethod,
+                },
+            },
+        });
+    }
+
     if (booleansNumber !== undefined) {
         configOverrides = mergeConfig(configOverrides, {
             obfuscate: {
                 booleans: {
                     number: booleansNumber,
+                },
+            },
+        });
+    }
+
+    if (booleanDepth !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                booleans: {
+                    depth: booleanDepth,
                 },
             },
         });
@@ -457,6 +499,14 @@ function parsePositiveInteger(value: string, flag: string): number {
     return parsed;
 }
 
+function parsePositiveIntegerOrRandomized(value: string, flag: string): number | "randomized" {
+    if (value === "randomized") {
+        return value;
+    }
+
+    return parsePositiveInteger(value, flag);
+}
+
 function parseNumberOperatorFamily(
     value: string,
     flag: string
@@ -478,6 +528,14 @@ function parseNumberMethod(value: string, flag: string): NumberObfuscationMethod
     }
 
     throw new InvalidArgumentError(`${flag} must be offset or equation`);
+}
+
+function parseBooleanMethod(value: string, flag: string): BooleanObfuscationMethod {
+    if (value === "number" || value === "depth") {
+        return value;
+    }
+
+    throw new InvalidArgumentError(`${flag} must be number or depth`);
 }
 
 function parseStringMethod(value: string, flag: string): StringObfuscationMethod {
@@ -505,11 +563,13 @@ interface CommanderCliOptions {
     stringsMethod?: StringObfuscationMethod;
     stringsSplitLength?: number;
     numbersEnabled?: boolean;
-    numberMethod?: NumberObfuscationMethod;
+    numbersMethod?: NumberObfuscationMethod;
     numbersOffset?: number | null;
     numbersOperator?: NumberObfuscationOperatorFamily | null;
     booleansEnabled?: boolean;
+    booleansMethod?: BooleanObfuscationMethod;
     booleansNumber?: number | null;
+    booleanDepth?: number | "randomized";
     randomizedUniqueIdentifiers?: boolean;
     minify?: boolean;
     functionify?: boolean;

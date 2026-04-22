@@ -63,6 +63,7 @@ function printConfigSummary(
     logger.debug(
         `  boolean obfuscation:            ${formatBoolean(config.obfuscate.booleans.enabled)}\n`
     );
+    logger.debug(`  boolean method:                 ${config.obfuscate.booleans.method}\n`);
     logger.debug(
         `  randomized unique identifiers:  ${formatBoolean(config.features.randomized_unique_identifiers)}\n`
     );
@@ -83,7 +84,10 @@ function printConfigSummary(
         `  number operator family:         ${formatNumberOperators(stats.numberObfuscationOperators)}\n`
     );
     logger.debug(
-        `  boolean number:                 ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n\n`
+        `  boolean number:                 ${formatOptionalNumber(stats.booleanObfuscationNumber)}\n`
+    );
+    logger.debug(
+        `  boolean depth:                  ${formatBooleanDepth(config.obfuscate.booleans.depth)}\n\n`
     );
 }
 
@@ -105,4 +109,8 @@ function formatNumberOperators(value: NumberObfuscationOperator[]): string {
     }
 
     return value.join(", ");
+}
+
+function formatBooleanDepth(value: number | "randomized" | null): string {
+    return value === null ? "default" : String(value);
 }
