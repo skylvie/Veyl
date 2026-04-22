@@ -122,36 +122,16 @@ const stats = await obfuscateFile({
     input: "./src/index.ts",
     output: "./dist/index.obfuscated.js",
     config: {
-        minify: true,
         obfuscate: {
-            strings: {
-                enabled: true,
-                encode: true,
-                method: "array",
-                split_length: 3,
-            },
-            numbers: {
-                enabled: true,
-                method: "offset",
-                offset: null,
-                operator: null,
-            },
-            booleans: {
-                enabled: true,
-                method: "number",
-                number: null,
-                depth: null,
-            },
+            strings: { enabled: false, },
+            numbers: { enabled: true, },
+            booleans: { enabled: true, },
         },
-        features: {
+        features: { 
             randomized_unique_identifiers: true,
-            unnecessary_depth: false,
-            functionify: false,
-            dead_code_injection: false,
-            control_flow_flattening: false,
-            simplify: false,
+            functionify: true
         },
-    },
+    }
 });
 
 console.log(stats.output, stats.outputBytes);
@@ -163,19 +143,11 @@ import { obfuscateCode } from "@skylvi/veyl";
 
 const result = obfuscateCode("const answer = 42; console.log(answer);", {
     obfuscate: {
-        strings: {
-            enabled: false,
-        },
-        numbers: {
-            enabled: true,
-        },
-        booleans: {
-            enabled: true,
-        },
+        strings: { enabled: false, },
+        numbers: { enabled: true, },
+        booleans: { enabled: true, },
     },
-    features: {
-        randomized_unique_identifiers: true,
-    },
+    features: { randomized_unique_identifiers: true, },
 });
 
 console.log(result.code);
