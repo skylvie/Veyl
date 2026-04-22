@@ -1,0 +1,33 @@
+{
+    "log_level": "info",
+    "minify": false,
+    "obfuscate": {
+        "strings": {
+            "enabled": false,
+            "encode": false,
+            "unicode_escape_sequence": false,
+            "method": "split",
+            "split_length": 3
+        },
+        "numbers": {
+            "enabled": false,
+            "method": "offset",
+            "offset": null,
+            "operator": null
+        },
+        "booleans": {
+            "enabled": false,
+            "method": "number",
+            "number": null,
+            "depth": null
+        }
+    },
+    "features": {
+        "randomized_unique_identifiers": false,
+        "unnecessary_depth": false,
+        "dead_code_injection": false,
+        "control_flow_flattening": false,
+        "simplify": false,
+        "functionify": false
+    }
+}

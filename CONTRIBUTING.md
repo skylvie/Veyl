@@ -4,7 +4,7 @@
 - Fork the repository to your own account.
 - Create a new branch for each change instead of working on `main`.
 - Keep each branch scoped to one change or one tightly related set of changes.
-- Update docs when behavior, config, CLI flags, or public API change. Make sure you also update the example config.
+- When behavior, config, CLI flags, or the public API change, update the relevant docs, refresh the example config if needed, and add or adjust tests to cover the change.
 
 ## Setup
 ```sh
@@ -37,17 +37,11 @@ pnpm build
 ## Testing
 ```sh
 pnpm test
-```
-Or run the shell script directly:
-```sh
-cd test
-chmod +x ./run.sh
-./run.sh
 
 # Flags
-./run.sh --keep-js
-./run.sh --keep-out
-./run.sh --rm-js
+pnpm test --keep-js # Keep all JS output
+pnpm test --keep-out # Keep `out.js`
+pnp test --rm-js # Cleanup any dists
 ```
 
 ## Workspace Layout

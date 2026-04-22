@@ -19,4 +19,3 @@
 ## Other
 - [ ] Webapp Demo
 - [ ] Anti debug gets its own package
-- [ ] Update test suite
