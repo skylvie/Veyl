@@ -14,5 +14,7 @@ export function insertHelperStatements(ast: object, helpers: t.Statement[]): voi
         insertAt++;
     }
 
+    // Helpers are inserted immediately after imports so every transformed statement can reference
+    // them without changing module-loading rules.
     program.body.splice(insertAt, 0, ...(helpers as unknown as BabelNode[]));
 }

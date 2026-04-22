@@ -96,6 +96,8 @@ export function mergeConfig(
     base: ObfuscationConfigInput,
     override: ObfuscationConfigInput
 ): ObfuscationConfigInput {
+    // CLI flags are intended to override only the leaves they mention, not wipe sibling config
+    // nested under the same feature group.
     return {
         log_level: override.log_level ?? base.log_level,
         minify: override.minify ?? base.minify,
@@ -286,6 +288,8 @@ function validateConfig(config: ObfuscationConfig): void {
         config.features.node_vm,
     ].filter(Boolean).length;
 
+    // Wrapper modes all take ownership of the same final program body, so combining them would
+    // produce ambiguous runtime semantics rather than additive behavior.
     if (enabledExecutionWrappers > 1) {
         throw new Error(
             "Only one of features.functionify, features.evalify, or features.node_vm can be enabled"
@@ -294,6 +298,8 @@ function validateConfig(config: ObfuscationConfig): void {
 
     const encryptionEnabled = publicKey !== null || privateKey !== null;
 
+    // Encryption only protects the wrapper payload string; without a wrapper there is nothing to
+    // decrypt at runtime.
     if (encryptionEnabled && enabledExecutionWrappers === 0) {
         throw new Error(
             "features.encryption can only be used with features.functionify, features.evalify, or features.node_vm"

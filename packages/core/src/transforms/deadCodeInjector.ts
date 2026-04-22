@@ -50,6 +50,8 @@ function injectIntoStatementList(
     }
 
     if (addedBlocksInCurrentList === 0 && firstEligibleIndex !== null) {
+        // Guaranteeing at least one injected block per eligible container makes the feature
+        // visible even when randomness happens to miss every candidate in a small file.
         statements.splice(firstEligibleIndex, 0, buildDeadCodeStatement(names));
         addedBlocks++;
     }
@@ -146,6 +148,8 @@ function shouldRandomlyInjectBefore(statement: t.Statement): boolean {
         return false;
     }
 
+    // Function and class declarations are kept sparser so the surrounding module shape remains
+    // believable instead of looking obviously machine-generated.
     if (t.isFunctionDeclaration(statement) || t.isClassDeclaration(statement)) {
         return crypto.randomInt(0, 100) < 20;
     }

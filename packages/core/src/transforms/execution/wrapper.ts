@@ -67,6 +67,8 @@ export function wrapProgramWithExecutionMode(
         importCount++;
     }
 
+    // Wrappers only replace executable body statements; imports must remain top-level so module
+    // loading semantics stay intact before the wrapped payload runs.
     const imports = program.body.slice(0, importCount);
     const bodyStatements = program.body.slice(importCount);
 
@@ -75,6 +77,8 @@ export function wrapProgramWithExecutionMode(
     }
 
     if (bodyStatements.some((statement) => t.isExportDeclaration(statement))) {
+        // Once execution is redirected through `Function`, `eval`, or `node:vm`, there is no
+        // longer a meaningful module surface to attach exports to.
         throw new Error(`features.${mode} does not support export statements`);
     }
 
@@ -129,6 +133,8 @@ export function wrapProgramWithExecutionMode(
     const runInContextName = names.freshIdentifier();
     const contextName = names.freshIdentifier();
     const contextPropertyNames = [
+        // `console` is intentionally preserved so wrapped programs keep the baseline debugging and
+        // logging behavior users expect from the unwrapped bundle.
         "console",
         ...new Set([...importBindingNames, ...runtimeBindingNames]),
     ];

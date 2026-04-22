@@ -91,6 +91,8 @@ export function renameProperties(ast: object, names: NameGenerator): PropertyRen
         },
     });
 
+    // Collect every local rename target before mutating the tree so equivalent property names stay
+    // consistent across declarations and accesses.
     traverse(ast, {
         "ObjectProperty|ObjectMethod|ClassProperty|ClassMethod|ClassAccessorProperty"(
             pathNode: PropertyPath
@@ -272,6 +274,8 @@ function isLocalPropertyAccess(
     localClassInstanceBindings: Set<string>
 ): boolean {
     if (node.type === "ThisExpression") {
+        // Inside renamed local classes, `this.foo` needs to follow the same rename rules as
+        // instance variables created from `new LocalClass()`.
         return true;
     }
 
@@ -320,6 +324,8 @@ function shouldSkipPropertyRename(pathNode: PropertyPath): boolean {
 
     const objectParent = pathNode.parentPath?.parent;
 
+    // Keys passed inline to calls/new expressions often participate in external APIs, so renaming
+    // them is much more likely to break user code than local object literals are.
     if (objectParent?.type === "CallExpression" || objectParent?.type === "NewExpression") {
         return true;
     }

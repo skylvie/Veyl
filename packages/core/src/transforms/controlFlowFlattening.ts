@@ -316,6 +316,8 @@ function isFlattenableStatement(statement: t.Statement, inConstructorBody: boole
         return false;
     }
 
+    // Directive prologues need to stay in their original contiguous prefix or engines stop
+    // recognizing them as directives.
     if (isDirectiveStatement(statement)) {
         return false;
     }
@@ -363,6 +365,8 @@ function prepareFlattenedSegment(
 function prepareVariableDeclaration(
     statement: t.VariableDeclaration
 ): { hoistedDeclarations: t.Statement[]; runtimeStatements: t.Statement[] } | null {
+    // Reordering `const` declarations through a dispatcher changes temporal dead zone behavior,
+    // so flattening only rewrites declarations that can safely degrade into assignment steps.
     if (statement.kind === "const") {
         return null;
     }
@@ -396,6 +400,8 @@ function prepareVariableDeclaration(
             declarator.init !== null &&
             nodeContainsIdentifierName(declarator.init, new Set(declaredNames))
         ) {
+            // Self-referential initializers rely on declaration-time ordering; moving them into
+            // later dispatcher cases can change both values and reference errors.
             return null;
         }
 
