@@ -86,6 +86,9 @@ function printConfigSummary(
     logger.debug(`  evalify:                       ${formatBoolean(config.features.evalify)}\n`);
     logger.debug(`  node vm:                       ${formatBoolean(config.features.node_vm)}\n`);
     logger.debug(
+        `  encrypted payloads:            ${formatBoolean(config.features.encryption.public_key !== null)}\n`
+    );
+    logger.debug(
         `  number offset:                  ${formatOptionalNumber(stats.numberObfuscationOffset)}\n`
     );
     logger.debug(

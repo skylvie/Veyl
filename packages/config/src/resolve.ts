@@ -77,6 +77,14 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
                 input?.features?.functionify ?? DEFAULT_OBFUSCATION_CONFIG.features.functionify,
             evalify: input?.features?.evalify ?? DEFAULT_OBFUSCATION_CONFIG.features.evalify,
             node_vm: input?.features?.node_vm ?? DEFAULT_OBFUSCATION_CONFIG.features.node_vm,
+            encryption: {
+                public_key:
+                    input?.features?.encryption?.public_key ??
+                    DEFAULT_OBFUSCATION_CONFIG.features.encryption.public_key,
+                private_key:
+                    input?.features?.encryption?.private_key ??
+                    DEFAULT_OBFUSCATION_CONFIG.features.encryption.private_key,
+            },
         },
     };
 
@@ -120,6 +128,14 @@ export function mergeConfig(
             functionify: override.features?.functionify ?? base.features?.functionify,
             evalify: override.features?.evalify ?? base.features?.evalify,
             node_vm: override.features?.node_vm ?? base.features?.node_vm,
+            encryption: {
+                public_key:
+                    override.features?.encryption?.public_key ??
+                    base.features?.encryption?.public_key,
+                private_key:
+                    override.features?.encryption?.private_key ??
+                    base.features?.encryption?.private_key,
+            },
         },
     };
 }
@@ -245,6 +261,25 @@ function validateConfig(config: ObfuscationConfig): void {
         throw new Error("features.node_vm must be true or false");
     }
 
+    const publicKey = config.features.encryption.public_key;
+    const privateKey = config.features.encryption.private_key;
+
+    if (publicKey !== null && typeof publicKey !== "string") {
+        throw new Error("features.encryption.public_key must be a string path or null");
+    }
+
+    if (privateKey !== null && typeof privateKey !== "string") {
+        throw new Error("features.encryption.private_key must be a string path or null");
+    }
+
+    if (publicKey !== null && publicKey.trim() === "") {
+        throw new Error("features.encryption.public_key must not be empty");
+    }
+
+    if (privateKey !== null && privateKey.trim() === "") {
+        throw new Error("features.encryption.private_key must not be empty");
+    }
+
     const enabledExecutionWrappers = [
         config.features.functionify,
         config.features.evalify,
@@ -254,6 +289,20 @@ function validateConfig(config: ObfuscationConfig): void {
     if (enabledExecutionWrappers > 1) {
         throw new Error(
             "Only one of features.functionify, features.evalify, or features.node_vm can be enabled"
+        );
+    }
+
+    const encryptionEnabled = publicKey !== null || privateKey !== null;
+
+    if (encryptionEnabled && enabledExecutionWrappers === 0) {
+        throw new Error(
+            "features.encryption can only be used with features.functionify, features.evalify, or features.node_vm"
+        );
+    }
+
+    if ((publicKey === null) !== (privateKey === null)) {
+        throw new Error(
+            "features.encryption.public_key and features.encryption.private_key must both be set or both be null"
         );
     }
 }

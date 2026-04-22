@@ -35,9 +35,14 @@ Example:
 		"simplify": false, // Apply compacting rewrites such as merged declarations and conditional returns
 		"functionify": false, // Run the final program body through `new Function(...)`
 		"evalify": false, // Run the final program body through `eval(...)`
-		"node_vm": false // Run the final program body through `node:vm`
+		"node_vm": false, // Run the final program body through `node:vm`
+		"encryption": {
+			"public_key": null, // Public key path used to encrypt wrapped payloads
+			"private_key": null // Private key path embedded to decrypt wrapped payloads at runtime
+		}
 	}
 }
 ```
 
 Only one of `features.functionify`, `features.evalify`, or `features.node_vm` can be enabled at a time.
+`features.encryption` can only be used when one of those execution-wrapper features is enabled, and both key paths must be set together or left `null`.

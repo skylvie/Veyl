@@ -372,7 +372,7 @@ function assertContains(haystack, needle, message) {
     }
 }
 
-function assertNotContains(haystack, needle, message) {
+function _assertNotContains(haystack, needle, message) {
     if (haystack.includes(needle)) {
         throw new Error(message);
     }
@@ -402,7 +402,11 @@ function runTypeScriptCase(caseDir, entryFile) {
         const targetPath = path.resolve(runtimeDir, relativePath);
 
         fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-        fs.writeFileSync(targetPath, rewriteTypeScriptImports(fs.readFileSync(file, "utf8")), "utf8");
+        fs.writeFileSync(
+            targetPath,
+            rewriteTypeScriptImports(fs.readFileSync(file, "utf8")),
+            "utf8"
+        );
     }
 
     return run(process.execPath, ["--no-warnings", path.resolve(runtimeDir, entryFile)], rootDir, {
@@ -411,7 +415,7 @@ function runTypeScriptCase(caseDir, entryFile) {
 }
 
 function rewriteTypeScriptImports(source) {
-    return source.replaceAll(".js\"", '.ts"').replaceAll(".js'", ".ts'");
+    return source.replaceAll('.js"', '.ts"').replaceAll(".js'", ".ts'");
 }
 
 function formatFailure(name, error) {

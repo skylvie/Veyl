@@ -223,6 +223,29 @@ export function getCases(casesDir) {
             },
         },
         {
+            name: "encrypted-payloads",
+            dir: path.resolve(casesDir, "encrypted-payloads"),
+            entry: "entry.ts",
+            configFile: "veyl_config.json",
+            validate(outputCode) {
+                assertContains(
+                    outputCode,
+                    "privateDecrypt",
+                    "encrypted payload case should inject runtime private key decryption"
+                );
+                assertContains(
+                    outputCode,
+                    "createDecipheriv",
+                    "encrypted payload case should inject runtime payload decryption"
+                );
+                assertNotContains(
+                    outputCode,
+                    "super-secret-payload",
+                    "encrypted payload case should not leave the plaintext body marker in output"
+                );
+            },
+        },
+        {
             name: "minify",
             dir: path.resolve(casesDir, "minify"),
             entry: "entry.ts",

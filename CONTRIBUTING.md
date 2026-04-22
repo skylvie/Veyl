@@ -41,7 +41,8 @@ pnpm test
 # Flags
 pnpm test --keep-js # Keep all JS output
 pnpm test --keep-out # Keep `out.js`
-pnp test --rm-js # Cleanup any dists
+pnpm test --clean # Cleanup any dists
+pnpm test --test=test_name # Run specific test
 ```
 
 ## Workspace Layout

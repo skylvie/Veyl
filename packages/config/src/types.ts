@@ -38,6 +38,10 @@ export interface ObfuscationConfig {
         functionify: boolean;
         evalify: boolean;
         node_vm: boolean;
+        encryption: {
+            public_key: string | null;
+            private_key: string | null;
+        };
     };
 }
 
@@ -74,5 +78,9 @@ export type ObfuscationConfigInput = Partial<{
         functionify: boolean;
         evalify: boolean;
         node_vm: boolean;
+        encryption: Partial<{
+            public_key: string | null;
+            private_key: string | null;
+        }>;
     }>;
 }>;

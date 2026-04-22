@@ -5,12 +5,15 @@ import type { CliOptions, LoadedConfig } from "../types/cli.js";
 export function loadCliConfig(options: CliOptions, cwd: string): LoadedConfig {
     if (options.configFile !== null) {
         return {
-            input: loadConfigFile(options.configFile),
+            input: resolveConfigPaths(
+                loadConfigFile(options.configFile),
+                path.dirname(options.configFile)
+            ),
             source: options.configFile,
         };
     }
 
-    const defaultConfig = loadDefaultConfigFile(cwd);
+    const defaultConfig = resolveConfigPaths(loadDefaultConfigFile(cwd), cwd);
 
     if (Object.keys(defaultConfig).length > 0) {
         return {
@@ -22,5 +25,32 @@ export function loadCliConfig(options: CliOptions, cwd: string): LoadedConfig {
     return {
         input: {},
         source: "built-in defaults",
+    };
+}
+
+function resolveConfigPaths(input: LoadedConfig["input"], baseDir: string): LoadedConfig["input"] {
+    const publicKey = input.features?.encryption?.public_key;
+    const privateKey = input.features?.encryption?.private_key;
+
+    if (publicKey === undefined && privateKey === undefined) {
+        return input;
+    }
+
+    return {
+        ...input,
+        features: {
+            ...input.features,
+            encryption: {
+                ...input.features?.encryption,
+                public_key:
+                    publicKey === undefined || publicKey === null
+                        ? publicKey
+                        : path.resolve(baseDir, publicKey),
+                private_key:
+                    privateKey === undefined || privateKey === null
+                        ? privateKey
+                        : path.resolve(baseDir, privateKey),
+            },
+        },
     };
 }
