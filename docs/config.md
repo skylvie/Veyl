@@ -1,3 +1,8 @@
+# Configuration
+Veyl uses a JSON config file. By default it looks for `veyl_config.json`, but you can override that with `-c`.
+
+Example:
+```jsonc
 {
 	"log_level": "info",
 	"minify": true,
@@ -31,3 +36,10 @@
 		"functionify": false // Run the final program body through `new Function(...)`
 	}
 }
+```
+
+## Log Levels
+- `none`
+- `error`
+- `info`
+- `debug`
