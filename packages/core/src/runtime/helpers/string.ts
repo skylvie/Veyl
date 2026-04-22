@@ -300,11 +300,7 @@ export function buildStringTableRuntimeHelpers(
                                           true
                                       ),
                                   ])
-                                : t.memberExpression(
-                                      t.identifier("parts"),
-                                      t.identifier("i"),
-                                      true
-                                  )
+                                : t.memberExpression(t.identifier("parts"), t.identifier("i"), true)
                         ),
                     ]),
                     t.expressionStatement(
@@ -312,11 +308,7 @@ export function buildStringTableRuntimeHelpers(
                             "=",
                             t.memberExpression(
                                 t.identifier("restored"),
-                                t.memberExpression(
-                                    t.identifier("order"),
-                                    t.identifier("i"),
-                                    true
-                                ),
+                                t.memberExpression(t.identifier("order"), t.identifier("i"), true),
                                 true
                             ),
                             t.identifier("value")

@@ -188,7 +188,10 @@ function flattenClassBody(
     return flattenedBlocks;
 }
 
-function buildFlattenedStatements(segment: t.Statement[], names: NameGenerator): t.Statement[] | null {
+function buildFlattenedStatements(
+    segment: t.Statement[],
+    names: NameGenerator
+): t.Statement[] | null {
     const preparedSegment = prepareFlattenedSegment(segment);
 
     if (preparedSegment === null) {
@@ -209,7 +212,10 @@ function buildFlattenedStatements(segment: t.Statement[], names: NameGenerator):
     return [
         ...preparedSegment.hoistedDeclarations,
         t.variableDeclaration("let", [
-            t.variableDeclarator(t.identifier(stateName), t.numericLiteral(stateValues[0] as number)),
+            t.variableDeclarator(
+                t.identifier(stateName),
+                t.numericLiteral(stateValues[0] as number)
+            ),
             t.variableDeclarator(t.identifier(doneName), t.booleanLiteral(false)),
         ]),
         t.whileStatement(

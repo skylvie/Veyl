@@ -1,3 +1,12 @@
+export type {
+    LogLevel,
+    NumberObfuscationMethod,
+    NumberObfuscationOperator,
+    NumberObfuscationOperatorFamily,
+    ObfuscationConfig,
+    ObfuscationConfigInput,
+    StringObfuscationMethod,
+} from "@skylvi/veyl-config";
 export {
     DEFAULT_CONFIG_FILE,
     DEFAULT_OBFUSCATION_CONFIG,
@@ -10,14 +19,6 @@ export {
     obfuscateCode,
     obfuscateFile,
 } from "./core/obfuscate.js";
-export type {
-    LogLevel,
-    NumberObfuscationOperator,
-    NumberObfuscationOperatorFamily,
-    ObfuscationConfig,
-    ObfuscationConfigInput,
-    StringObfuscationMethod,
-} from "@skylvi/veyl-config";
 export type {
     ObfuscateCodeResult,
     ObfuscateFileOptions,

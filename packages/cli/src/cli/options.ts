@@ -1,6 +1,7 @@
 import path from "node:path";
 import type {
     LogLevel,
+    NumberObfuscationMethod,
     NumberObfuscationOperatorFamily,
     ObfuscationConfigInput,
     StringObfuscationMethod,
@@ -62,14 +63,20 @@ export function buildCliProgram(versionText: string): Command {
         )
         .addOption(
             new Option(
+                "--number-method, --number_method <offset|equation>",
+                "Number obfuscation method."
+            ).argParser((value: string) => parseNumberMethod(value, "--number-method"))
+        )
+        .addOption(
+            new Option(
                 "--numbers-offset, --numbers_offset <num|randomized>",
-                "Number offset for numeric literal obfuscation."
+                'Number offset for "offset" numeric obfuscation.'
             ).argParser((value: string) => parseNumberOrRandomized(value, "--numbers-offset"))
         )
         .addOption(
             new Option(
                 "--numbers-operator, --numbers_operator <+-|*/|randomized>",
-                "Number operator family for numeric literal obfuscation."
+                'Number operator family for "offset" numeric obfuscation.'
             ).argParser((value: string) => parseNumberOperatorFamily(value, "--numbers-operator"))
         )
         .addOption(
@@ -196,6 +203,9 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
     const numbersEnabled = readAliasedOption(parsed, "numbersEnabled", "numbers_enabled") as
         | boolean
         | undefined;
+    const numberMethod = readAliasedOption(parsed, "numberMethod", "number_method") as
+        | NumberObfuscationMethod
+        | undefined;
     const numbersOffset = readAliasedOption(parsed, "numbersOffset", "numbers_offset") as
         | number
         | null
@@ -278,6 +288,16 @@ function buildConfigOverrides(parsed: CommanderCliOptions): ObfuscationConfigInp
             obfuscate: {
                 numbers: {
                     enabled: numbersEnabled,
+                },
+            },
+        });
+    }
+
+    if (numberMethod !== undefined) {
+        configOverrides = mergeConfig(configOverrides, {
+            obfuscate: {
+                numbers: {
+                    method: numberMethod,
                 },
             },
         });
@@ -452,6 +472,14 @@ function parseNumberOperatorFamily(
     throw new InvalidArgumentError(`${flag} must be "+-", "*/", or randomized`);
 }
 
+function parseNumberMethod(value: string, flag: string): NumberObfuscationMethod {
+    if (value === "offset" || value === "equation") {
+        return value;
+    }
+
+    throw new InvalidArgumentError(`${flag} must be offset or equation`);
+}
+
 function parseStringMethod(value: string, flag: string): StringObfuscationMethod {
     if (value === "array" || value === "split") {
         return value;
@@ -477,6 +505,7 @@ interface CommanderCliOptions {
     stringsMethod?: StringObfuscationMethod;
     stringsSplitLength?: number;
     numbersEnabled?: boolean;
+    numberMethod?: NumberObfuscationMethod;
     numbersOffset?: number | null;
     numbersOperator?: NumberObfuscationOperatorFamily | null;
     booleansEnabled?: boolean;

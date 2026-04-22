@@ -1,5 +1,6 @@
 import type {
     LogLevel,
+    NumberObfuscationMethod,
     NumberObfuscationOperatorFamily,
     StringObfuscationMethod,
 } from "./types.js";
@@ -12,6 +13,10 @@ export function isNumberObfuscationOperatorFamily(
     input: unknown
 ): input is NumberObfuscationOperatorFamily {
     return input === "+-" || input === "*/";
+}
+
+export function isNumberObfuscationMethod(input: unknown): input is NumberObfuscationMethod {
+    return input === "offset" || input === "equation";
 }
 
 export function isStringObfuscationMethod(input: unknown): input is StringObfuscationMethod {

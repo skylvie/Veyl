@@ -1,5 +1,6 @@
 export type NumberObfuscationOperator = "+" | "-" | "*" | "/";
 export type NumberObfuscationOperatorFamily = "+-" | "*/";
+export type NumberObfuscationMethod = "offset" | "equation";
 export type StringObfuscationMethod = "array" | "split";
 export type LogLevel = "none" | "error" | "info" | "debug";
 
@@ -15,6 +16,7 @@ export interface ObfuscationConfig {
         };
         numbers: {
             enabled: boolean;
+            method: NumberObfuscationMethod;
             offset: number | null;
             operator: NumberObfuscationOperatorFamily | null;
         };
@@ -45,6 +47,7 @@ export type ObfuscationConfigInput = Partial<{
         }>;
         numbers: Partial<{
             enabled: boolean;
+            method: NumberObfuscationMethod;
             offset: number | null;
             operator: NumberObfuscationOperatorFamily | null;
         }>;

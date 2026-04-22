@@ -3,12 +3,14 @@ import path from "node:path";
 import { DEFAULT_CONFIG_FILE } from "./defaults.js";
 import {
     isLogLevel,
+    isNumberObfuscationMethod,
     isNumberObfuscationOperatorFamily,
     isPlainObject,
     isStringObfuscationMethod,
 } from "./guards.js";
 import type {
     LogLevel,
+    NumberObfuscationMethod,
     NumberObfuscationOperatorFamily,
     ObfuscationConfigInput,
     StringObfuscationMethod,
@@ -36,7 +38,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
         ["enabled", "encode", "method", "split_length"],
         "obfuscate.strings"
     );
-    assertNoUnknownKeys(numbers, ["enabled", "offset", "operator"], "obfuscate.numbers");
+    assertNoUnknownKeys(numbers, ["enabled", "method", "offset", "operator"], "obfuscate.numbers");
     assertNoUnknownKeys(booleans, ["enabled", "number"], "obfuscate.booleans");
     assertNoUnknownKeys(
         features,
@@ -67,6 +69,7 @@ export function loadConfigFile(configPath: string): ObfuscationConfigInput {
             },
             numbers: {
                 enabled: readOptionalBoolean(numbers, "enabled", "obfuscate.numbers.enabled"),
+                method: readOptionalNumberMethod(numbers, "method", "obfuscate.numbers.method"),
                 offset: readOptionalNumberOrNull(numbers, "offset", "obfuscate.numbers.offset"),
                 operator: readOptionalNumberOperatorFamily(
                     numbers,
@@ -220,6 +223,22 @@ function readOptionalNumberOperatorFamily(
     }
 
     throw new Error(`${label} must be one of "+-", "*/", null, or "randomized"`);
+}
+
+function readOptionalNumberMethod(
+    input: Record<string, unknown> | undefined,
+    key: string,
+    label: string
+): NumberObfuscationMethod | undefined {
+    if (input === undefined || input[key] === undefined) {
+        return undefined;
+    }
+
+    if (isNumberObfuscationMethod(input[key])) {
+        return input[key];
+    }
+
+    throw new Error(`${label} must be "offset" or "equation"`);
 }
 
 function readOptionalStringMethod(

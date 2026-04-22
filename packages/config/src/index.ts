@@ -3,6 +3,7 @@ export { loadConfigFile, loadDefaultConfigFile } from "./load.js";
 export { mergeConfig, resolveConfig } from "./resolve.js";
 export type {
     LogLevel,
+    NumberObfuscationMethod,
     NumberObfuscationOperator,
     NumberObfuscationOperatorFamily,
     ObfuscationConfig,

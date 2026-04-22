@@ -1,6 +1,7 @@
 import { DEFAULT_OBFUSCATION_CONFIG } from "./defaults.js";
 import {
     isLogLevel,
+    isNumberObfuscationMethod,
     isNumberObfuscationOperatorFamily,
     isStringObfuscationMethod,
 } from "./guards.js";
@@ -29,6 +30,9 @@ export function resolveConfig(input?: ObfuscationConfigInput): ObfuscationConfig
                 enabled:
                     input?.obfuscate?.numbers?.enabled ??
                     DEFAULT_OBFUSCATION_CONFIG.obfuscate.numbers.enabled,
+                method:
+                    input?.obfuscate?.numbers?.method ??
+                    DEFAULT_OBFUSCATION_CONFIG.obfuscate.numbers.method,
                 offset:
                     input?.obfuscate?.numbers?.offset ??
                     DEFAULT_OBFUSCATION_CONFIG.obfuscate.numbers.offset,
@@ -138,6 +142,10 @@ function validateConfig(config: ObfuscationConfig): void {
         throw new Error("obfuscate.numbers.enabled must be true or false");
     }
 
+    if (!isNumberObfuscationMethod(config.obfuscate.numbers.method)) {
+        throw new Error('obfuscate.numbers.method must be "offset" or "equation"');
+    }
+
     if (
         config.obfuscate.numbers.offset !== null &&
         (!Number.isFinite(config.obfuscate.numbers.offset) || config.obfuscate.numbers.offset === 0)
@@ -150,6 +158,16 @@ function validateConfig(config: ObfuscationConfig): void {
         !isNumberObfuscationOperatorFamily(config.obfuscate.numbers.operator)
     ) {
         throw new Error('obfuscate.numbers.operator must be one of "+-", "*/", or null');
+    }
+
+    if (config.obfuscate.numbers.method === "equation") {
+        if (config.obfuscate.numbers.offset !== null) {
+            throw new Error('obfuscate.numbers.offset can only be used with method "offset"');
+        }
+
+        if (config.obfuscate.numbers.operator !== null) {
+            throw new Error('obfuscate.numbers.operator can only be used with method "offset"');
+        }
     }
 
     if (typeof config.obfuscate.booleans.enabled !== "boolean") {

@@ -1,5 +1,5 @@
-import type { ObfuscationConfig } from "@skylvi/veyl-config";
 import type { NumberObfuscationOperator, ObfuscationStats } from "@skylvi/veyl";
+import type { ObfuscationConfig } from "@skylvi/veyl-config";
 import type { CliOptions } from "../types/cli.js";
 import type { CliLogger } from "../types/logger.js";
 import { color } from "../utils/color.js";
@@ -54,15 +54,12 @@ function printConfigSummary(
     logger.debug(
         `  string encoding:                ${formatBoolean(config.obfuscate.strings.encode)}\n`
     );
-    logger.debug(
-        `  string method:                  ${config.obfuscate.strings.method}\n`
-    );
-    logger.debug(
-        `  string split length:            ${config.obfuscate.strings.split_length}\n`
-    );
+    logger.debug(`  string method:                  ${config.obfuscate.strings.method}\n`);
+    logger.debug(`  string split length:            ${config.obfuscate.strings.split_length}\n`);
     logger.debug(
         `  number obfuscation:             ${formatBoolean(config.obfuscate.numbers.enabled)}\n`
     );
+    logger.debug(`  number method:                  ${config.obfuscate.numbers.method}\n`);
     logger.debug(
         `  boolean obfuscation:            ${formatBoolean(config.obfuscate.booleans.enabled)}\n`
     );

@@ -47,8 +47,9 @@ Veyl has a verbose configuration system. By default, Veyl will check for a `veyl
 		},
 		"numbers": {
 			"enabled": true, // Do number obfuscation
-			"offset": null, // Number offset or "randomized"/null
-			"operator": null // "+-", "*/", or "randomized"/null
+			"method": "offset", // "offset" or "equation"
+			"offset": null, // Number offset or "randomized"/null, only for "offset"
+			"operator": null // "+-", "*/", or "randomized"/null, only for "offset"
 		},
 		"booleans": {
 			"enabled": true, // Do boolean obfuscation
@@ -80,6 +81,7 @@ You can also use CLI flags instead:
 --strings-method=array|split
 --strings-split-length=<num>
 --numbers-enabled=true|false
+--number-method=offset|equation
 --numbers-offset=<num|randomized>
 --numbers-operator=+-|*/|randomized
 --booleans-enabled=true|false
@@ -126,6 +128,7 @@ const stats = await obfuscateFile({
             },
             numbers: {
                 enabled: true,
+                method: "offset",
                 offset: null,
                 operator: null,
             },
@@ -180,7 +183,7 @@ console.log(result.code);
 - `loadConfigFile(path)`: reads a config JSON file.
 - `loadDefaultConfigFile(cwd)`: reads `veyl_config.json` from a directory when present.
 - `DEFAULT_CONFIG_FILE` and `DEFAULT_OBFUSCATION_CONFIG`.
-- Types: `ObfuscationConfigInput`, `ObfuscationConfig`, `ObfuscationStats`, `ObfuscateFileOptions`, `ObfuscateCodeResult`, `LogLevel`, and `NumberObfuscationOperator`.
+- Types: `ObfuscationConfigInput`, `ObfuscationConfig`, `ObfuscationStats`, `ObfuscateFileOptions`, `ObfuscateCodeResult`, `LogLevel`, `NumberObfuscationMethod`, and `NumberObfuscationOperator`.
 
 ## TODO
 ### Core Obfuscation Features
@@ -256,7 +259,7 @@ After bundling, Veyl parses the JS into an AST and applies the obfuscation passe
 - Control flow flattening can rewrite eligible straight-line statement runs into a randomized dispatcher loop so the original execution order is hidden behind a state machine.
 - Simplify can merge declarations and expression chains, compact `if/else` returns into conditional expressions, and fold expression tails into comma-expression returns.
 - String literals can be obfuscated through either a randomized string table or inline split concatenation. When `obfuscate.strings.encode` is enabled, chunks are encoded with base64, bit rotation, and XOR before runtime decode.
-- Number literals are replaced with calls to a numeric decoder. The encoded number uses a randomized additive or multiplicative shift so the original value is not written directly in the output.
+- Number literals can use either `obfuscate.numbers.method: "offset"` or `"equation"`. `offset` replaces numbers with runtime decoder calls using a randomized additive or multiplicative shift, while `equation` rewrites numbers into direct arithmetic expressions that evaluate to the same value. `obfuscate.numbers.offset` and `obfuscate.numbers.operator` only apply to `offset`.
 - Boolean literals are replaced with calls to a boolean decoder that compares randomized numeric tokens instead of writing `true` or `false` directly.
 - When `features.functionify` is enabled, Veyl stringifies the transformed program body, obfuscates that body string, and executes it through `new Function(...)` while passing imported bindings and helper functions in as runtime arguments.
 

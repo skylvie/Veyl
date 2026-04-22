@@ -14,6 +14,7 @@ export const DEFAULT_OBFUSCATION_CONFIG: ObfuscationConfig = {
         },
         numbers: {
             enabled: true,
+            method: "offset",
             offset: null,
             operator: null,
         },

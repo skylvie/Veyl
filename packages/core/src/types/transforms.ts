@@ -49,6 +49,7 @@ export interface IdentifierNode extends BabelNode {
 
 export interface PropertyPath {
     node: PropKeyNode;
+    parent?: BabelNode;
     parentPath?: {
         parent?: BabelNode;
     };

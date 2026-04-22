@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import * as babelParser from "@babel/parser";
 import * as t from "@babel/types";
-import { resolveConfig } from "@skylvi/veyl-config";
 import type { ObfuscationConfigInput, StringObfuscationMethod } from "@skylvi/veyl-config";
+import { resolveConfig } from "@skylvi/veyl-config";
 import { generate } from "../babel/interop.js";
 import { buildRuntimeHelpers, insertHelperStatements } from "../runtime/index.js";
 import { flattenControlFlow } from "../transforms/controlFlowFlattening.js";
@@ -175,7 +175,12 @@ function functionifyProgram(
         comments: false,
         compact: false,
     }).code;
-    const bodyStringExpression = addFunctionifiedBodyString(runtimeOptions, names, bodyCode, config);
+    const bodyStringExpression = addFunctionifiedBodyString(
+        runtimeOptions,
+        names,
+        bodyCode,
+        config
+    );
     const functionParamNames = [
         ...collectTopLevelBindingNames(imports),
         ...collectRuntimeBindingNames(runtimeOptions),
@@ -293,26 +298,21 @@ function addFunctionifiedBodyString(
         );
     }
 
-    if (
-        runtimeOptions.strings.accessorName === undefined ||
-        runtimeOptions.strings.encodedTable === undefined ||
-        runtimeOptions.strings.orderTable === undefined
-    ) {
+    const stringRuntime = runtimeOptions.strings;
+    const encodedTable = stringRuntime.encodedTable;
+    const orderTable = stringRuntime.orderTable;
+    const accessorName = stringRuntime.accessorName;
+
+    if (accessorName === undefined || encodedTable === undefined || orderTable === undefined) {
         throw new Error("array string obfuscation requires string table state");
     }
 
-    const stringRuntime = runtimeOptions.strings;
-    const encodedTable = stringRuntime.encodedTable!;
-    const orderTable = stringRuntime.orderTable!;
-    const accessorName = stringRuntime.accessorName!;
     const tableIndex = encodedTable.length;
     const shuffledParts = shuffleStringParts(splitStringForArrayTable(bodyCode));
 
     encodedTable.push(
         shuffledParts.parts.map((part) =>
-            stringRuntime.encode
-                ? encodeStringLiteralValue(part, stringRuntime.xorKey)
-                : part
+            stringRuntime.encode ? encodeStringLiteralValue(part, stringRuntime.xorKey) : part
         )
     );
     orderTable.push(shuffledParts.order);

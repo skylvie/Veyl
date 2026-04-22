@@ -1,4 +1,13 @@
 export type {
+    LogLevel,
+    NumberObfuscationMethod,
+    NumberObfuscationOperator,
+    NumberObfuscationOperatorFamily,
+    ObfuscationConfig,
+    ObfuscationConfigInput,
+    StringObfuscationMethod,
+} from "@skylvi/veyl-config";
+export type {
     BabelNode,
     BabelNodePath,
     BabelScope,
@@ -6,14 +15,6 @@ export type {
     PropKeyNode,
     TraverseFn,
 } from "./babel.js";
-export type {
-    LogLevel,
-    NumberObfuscationOperator,
-    NumberObfuscationOperatorFamily,
-    ObfuscationConfig,
-    ObfuscationConfigInput,
-    StringObfuscationMethod,
-} from "@skylvi/veyl-config";
 export type {
     BundleResult,
     ObfuscateCodeResult,

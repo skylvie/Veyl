@@ -1,5 +1,5 @@
-import type { NumberObfuscationOperator } from "@skylvi/veyl-config";
 import * as t from "@babel/types";
+import type { NumberObfuscationOperator } from "@skylvi/veyl-config";
 
 export function buildNumberRuntimeHelper(
     numberDecoderName: string,
