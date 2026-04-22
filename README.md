@@ -8,7 +8,7 @@ veyl -i ./input.ts -o ./output.js
 ```
 
 ### Web Demo
-If you don't want to install Veyl but want to mess around with it, you can use the webapp found [here](https://skylvie.github.io/veyl/)
+If you don't want to install Veyl but want to mess around with it, you can use the webapp found [here](https://skylvie.github.io/Veyl/)
 
 ## Install From Source
 ```sh
