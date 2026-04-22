@@ -13,7 +13,7 @@ git clone https://github.com/skylvie/veyl
 cd veyl
 pnpm install
 pnpm build
-node packages/cli/dist/cli.js -i ./input.ts -o ./output.js
+node packages/cli/dist/index.js -i ./input.ts -o ./output.js
 ```
 
 ## Docs

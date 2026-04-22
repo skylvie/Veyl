@@ -16,7 +16,7 @@ git clone https://github.com/skylvie/veyl
 cd veyl
 pnpm install
 pnpm build
-node packages/cli/dist/cli.js -i ./input.ts -o ./output.js
+node packages/cli/dist/index.js -i ./input.ts -o ./output.js
 ```
 Optional global link:
 ```sh
@@ -54,3 +54,4 @@ veyl -i ./input.ts -o ./output.js
 - `error`: print errors only
 - `info`: print progress updates only
 - `debug`: print paths, resolved config, and summary details
+
