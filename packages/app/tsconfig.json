@@ -10,7 +10,9 @@
         "baseUrl": ".",
         "ignoreDeprecations": "6.0",
         "paths": {
+            "@skylvi/veyl": ["../core/src/index.ts"],
             "@skylvi/veyl/browser": ["../core/src/browser.ts"],
+            "@skylvi/veyl-config": ["../config/src/index.ts"],
             "@skylvi/veyl-config/browser": ["../config/src/browser.ts"]
         },
         "noEmit": true
