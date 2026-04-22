@@ -21,4 +21,3 @@ node packages/cli/dist/cli.js -i ./input.ts -o ./output.js
 - [CLI](docs/CLI.md)
 - [Configuration](docs/config.md)
 - [How It Works](docs/how_it_works.md)
-- [AP CSP Create Task Evidence](docs/ap_csp_create_task_evidence.md)
