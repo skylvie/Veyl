@@ -228,6 +228,7 @@ export function buildStringRuntimeHelpers(
 
 export function buildStringTableRuntimeHelpers(
     stringTableName: string,
+    stringOrderTableName: string,
     stringAccessorName: string,
     stringDecoderName: string,
     encodedTable: string[][],
@@ -248,10 +249,7 @@ export function buildStringTableRuntimeHelpers(
         t.variableDeclarator(t.identifier(stringTableName), t.arrayExpression(tableElements)),
     ]);
     const stringOrderDeclaration = t.variableDeclaration("const", [
-        t.variableDeclarator(
-            t.identifier(`${stringTableName}_o`),
-            t.arrayExpression(orderElements)
-        ),
+        t.variableDeclarator(t.identifier(stringOrderTableName), t.arrayExpression(orderElements)),
     ]);
 
     const stringAccessorFn = t.functionDeclaration(
@@ -268,7 +266,7 @@ export function buildStringTableRuntimeHelpers(
                 t.variableDeclarator(
                     t.identifier("order"),
                     t.memberExpression(
-                        t.identifier(`${stringTableName}_o`),
+                        t.identifier(stringOrderTableName),
                         t.identifier("index"),
                         true
                     )

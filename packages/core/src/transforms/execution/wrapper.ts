@@ -1,6 +1,7 @@
 import * as t from "@babel/types";
 import type { StringObfuscationMethod } from "@skylvi/veyl-config";
 import { generate } from "../../babel/interop.js";
+import { syncRuntimeHelpers } from "../../runtime/syncRuntimeHelpers.js";
 import type { RuntimeHelperOptions } from "../../types/runtime.js";
 import type { NameGenerator } from "../../utils/random.js";
 import { addWrappedBodyString } from "./bodyString.js";
@@ -53,7 +54,8 @@ export function wrapProgramWithExecutionMode(
     names: NameGenerator,
     runtimeOptions: RuntimeHelperOptions,
     config: ExecutionWrapperConfig,
-    mode: ExecutionWrapperMode
+    mode: ExecutionWrapperMode,
+    preservedStatementCount = 0
 ): number {
     const program = (ast as { program?: { body?: t.Statement[] } }).program;
 
@@ -70,7 +72,11 @@ export function wrapProgramWithExecutionMode(
     // Wrappers only replace executable body statements; imports must remain top-level so module
     // loading semantics stay intact before the wrapped payload runs.
     const imports = program.body.slice(0, importCount);
-    const bodyStatements = program.body.slice(importCount);
+    const preservedStatements = program.body.slice(
+        importCount,
+        importCount + preservedStatementCount
+    );
+    const bodyStatements = program.body.slice(importCount + preservedStatementCount);
 
     if (bodyStatements.length === 0) {
         return 0;
@@ -92,6 +98,7 @@ export function wrapProgramWithExecutionMode(
     const bodyStringExpression =
         encryptedPayload?.bodyStringExpression ??
         addWrappedBodyString(runtimeOptions, names, bodyCode, config);
+    syncRuntimeHelpers(preservedStatements, runtimeOptions);
     const importBindingNames = collectTopLevelBindingNames(imports);
     const runtimeBindingNames = collectRuntimeBindingNames(runtimeOptions);
     const importStatements = encryptedPayload?.importStatements ?? [];
@@ -103,6 +110,7 @@ export function wrapProgramWithExecutionMode(
         program.body = [
             ...imports,
             ...importStatements,
+            ...preservedStatements,
             ...setupStatements,
             t.expressionStatement(
                 t.callExpression(
@@ -122,6 +130,7 @@ export function wrapProgramWithExecutionMode(
         program.body = [
             ...imports,
             ...importStatements,
+            ...preservedStatements,
             ...setupStatements,
             t.expressionStatement(t.callExpression(t.identifier("eval"), [bodyStringExpression])),
         ];
@@ -142,6 +151,7 @@ export function wrapProgramWithExecutionMode(
     program.body = [
         ...imports,
         ...importStatements,
+        ...preservedStatements,
         t.importDeclaration(
             [
                 t.importSpecifier(t.identifier(createContextName), t.identifier("createContext")),
@@ -215,6 +225,10 @@ function collectRuntimeBindingNames(runtimeOptions: RuntimeHelperOptions): strin
 
         if (runtimeOptions.strings.tableName !== undefined) {
             names.push(runtimeOptions.strings.tableName);
+        }
+
+        if (runtimeOptions.strings.orderTableName !== undefined) {
+            names.push(runtimeOptions.strings.orderTableName);
         }
 
         if (runtimeOptions.strings.accessorName !== undefined) {

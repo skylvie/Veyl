@@ -178,9 +178,7 @@ export function App() {
                     className="flex min-h-[32rem] resize-y gap-4 overflow-auto border border-[#3c3c3c] bg-[#1e1e1e] p-4"
                     ref={editorsRowRef}
                 >
-                    <section
-                        className="flex min-h-0 min-w-0 flex-1 flex-col border border-[#3c3c3c] bg-[#1e1e1e] p-4"
-                    >
+                    <section className="flex min-h-0 min-w-0 flex-1 flex-col border border-[#3c3c3c] bg-[#1e1e1e] p-4">
                         <div className="mb-3 flex items-center justify-between">
                             <h2 className="text-xl font-semibold text-[#d4d4d4]">Source</h2>
                             <span className="text-sm text-[#808080]">TypeScript / JavaScript</span>
@@ -198,9 +196,7 @@ export function App() {
                         </div>
                     </section>
 
-                    <section
-                        className="flex min-h-0 min-w-0 flex-1 flex-col border border-[#3c3c3c] bg-[#1e1e1e] p-4"
-                    >
+                    <section className="flex min-h-0 min-w-0 flex-1 flex-col border border-[#3c3c3c] bg-[#1e1e1e] p-4">
                         <div className="mb-3 flex items-center justify-between">
                             <h2 className="text-xl font-semibold text-[#d4d4d4]">Output</h2>
                             <div className="flex items-center gap-4">

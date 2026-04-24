@@ -38,6 +38,7 @@ export function obfuscateStringLiterals(
     const stringMethod = stringObfuscationEnabled ? config.obfuscate.strings.method : null;
     const stringSplitLength = config.obfuscate.strings.split_length;
     const stringTableName = stringMethod === "array" ? names.freshIdentifier() : undefined;
+    const stringOrderTableName = stringMethod === "array" ? names.freshIdentifier() : undefined;
     const stringAccessorName = stringMethod === "array" ? names.freshIdentifier() : undefined;
     const stringLiteralPaths: BabelNodePath[] = [];
     const templateLiteralPaths: BabelNodePath[] = [];
@@ -129,6 +130,7 @@ export function obfuscateStringLiterals(
 
         if (stringTableState !== null) {
             runtimeOptions.strings.tableName = stringTableName;
+            runtimeOptions.strings.orderTableName = stringOrderTableName;
             runtimeOptions.strings.accessorName = stringAccessorName;
             runtimeOptions.strings.encodedTable = stringTableState.encodedTable;
             runtimeOptions.strings.orderTable = stringTableState.orderTable;

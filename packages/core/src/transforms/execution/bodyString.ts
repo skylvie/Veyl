@@ -22,24 +22,9 @@ export function addWrappedBodyString(
     bodyCode: string,
     config: WrappedBodyStringConfig
 ): t.Expression {
-    if (runtimeOptions.strings === undefined) {
-        runtimeOptions.strings = {
-            method: config.obfuscate.strings.method,
-            decoderName: names.freshIdentifier(),
-            encode: config.obfuscate.strings.encode,
-            unicodeEscapeSequence: config.obfuscate.strings.unicode_escape_sequence,
-            xorKey: randomInt(1, 256),
-        };
+    ensureWrappedBodyStringRuntime(runtimeOptions, names, config);
 
-        if (config.obfuscate.strings.method === "array") {
-            runtimeOptions.strings.tableName = names.freshIdentifier();
-            runtimeOptions.strings.accessorName = names.freshIdentifier();
-            runtimeOptions.strings.encodedTable = [];
-            runtimeOptions.strings.orderTable = [];
-        }
-    }
-
-    if (runtimeOptions.strings.method === "split") {
+    if (runtimeOptions.strings?.method === "split") {
         return buildSplitStringExpression(
             runtimeOptions.strings.decoderName,
             bodyCode,
@@ -51,9 +36,14 @@ export function addWrappedBodyString(
     }
 
     const stringRuntime = runtimeOptions.strings;
-    const encodedTable = stringRuntime.encodedTable;
-    const orderTable = stringRuntime.orderTable;
-    const accessorName = stringRuntime.accessorName;
+
+    if (stringRuntime === undefined) {
+        throw new Error("wrapped body string runtime was not initialized");
+    }
+
+    const encodedTable = stringRuntime?.encodedTable;
+    const orderTable = stringRuntime?.orderTable;
+    const accessorName = stringRuntime?.accessorName;
 
     if (accessorName === undefined || encodedTable === undefined || orderTable === undefined) {
         throw new Error("array string obfuscation requires string table state");
@@ -70,6 +60,30 @@ export function addWrappedBodyString(
     orderTable.push(shuffledParts.order);
 
     return t.callExpression(t.identifier(accessorName), [t.numericLiteral(tableIndex)]);
+}
+
+export function ensureWrappedBodyStringRuntime(
+    runtimeOptions: RuntimeHelperOptions,
+    names: NameGenerator,
+    config: WrappedBodyStringConfig
+): void {
+    if (runtimeOptions.strings === undefined) {
+        runtimeOptions.strings = {
+            method: config.obfuscate.strings.method,
+            decoderName: names.freshIdentifier(),
+            encode: config.obfuscate.strings.encode,
+            unicodeEscapeSequence: config.obfuscate.strings.unicode_escape_sequence,
+            xorKey: randomInt(1, 256),
+        };
+
+        if (config.obfuscate.strings.method === "array") {
+            runtimeOptions.strings.tableName = names.freshIdentifier();
+            runtimeOptions.strings.orderTableName = names.freshIdentifier();
+            runtimeOptions.strings.accessorName = names.freshIdentifier();
+            runtimeOptions.strings.encodedTable = [];
+            runtimeOptions.strings.orderTable = [];
+        }
+    }
 }
 
 function buildSplitStringExpression(

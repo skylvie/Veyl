@@ -177,6 +177,11 @@ export function getCases(casesDir) {
             validate(outputCode) {
                 assertContains(outputCode, "new Function", "functionify case should emit new Function");
                 assertContains(outputCode, "TextDecoder", "functionify case should inject string decoder");
+                assertNotContains(
+                    outputCode,
+                    "const alphabet =",
+                    "functionify case should obfuscate injected helper locals"
+                );
             },
         },
         {
@@ -186,6 +191,11 @@ export function getCases(casesDir) {
             configFile: "veyl_config.json",
             validate(outputCode) {
                 assertContains(outputCode, "eval(", "evalify case should emit eval execution");
+                assertNotContains(
+                    outputCode,
+                    "const alphabet =",
+                    "evalify case should obfuscate injected helper locals"
+                );
                 assertNotContains(
                     outputCode,
                     "new Function",

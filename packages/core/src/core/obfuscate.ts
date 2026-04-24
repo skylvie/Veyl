@@ -5,8 +5,10 @@ import type { ObfuscationConfigInput } from "@skylvi/veyl-config";
 import { resolveConfig } from "@skylvi/veyl-config";
 import { generate } from "../babel/interop.js";
 import { buildRuntimeHelpers, insertHelperStatements } from "../runtime/index.js";
+import { renameRuntimeBindingNames } from "../runtime/runtimeBindingNames.js";
 import { flattenControlFlow } from "../transforms/controlFlowFlattening.js";
 import { injectDeadCode } from "../transforms/deadCodeInjector.js";
+import { ensureWrappedBodyStringRuntime } from "../transforms/execution/bodyString.js";
 import {
     resolveExecutionWrapperMode,
     wrapProgramWithExecutionMode,
@@ -132,21 +134,34 @@ export function obfuscateCode(
     const executionWrapperMode = resolveExecutionWrapperMode(config.features);
 
     if (executionWrapperMode !== null) {
+        ensureWrappedBodyStringRuntime(literalResult.runtimeOptions, names, config);
+    }
+
+    const helperNodes = buildRuntimeHelpers(literalResult.runtimeOptions);
+    insertHelperStatements(ast, helperNodes);
+    const renamedBindings = new Map<string, string>();
+    const helperBindingPass = config.features.randomized_unique_identifiers
+        ? renameBindings(ast, names, {
+              onRename(oldName, newName) {
+                  renamedBindings.set(oldName, newName);
+              },
+          })
+        : 0;
+
+    if (renamedBindings.size > 0) {
+        renameRuntimeBindingNames(literalResult.runtimeOptions, renamedBindings);
+    }
+
+    if (executionWrapperMode !== null) {
         literalResult.stringCount += wrapProgramWithExecutionMode(
             ast,
             names,
             literalResult.runtimeOptions,
             config,
-            executionWrapperMode
+            executionWrapperMode,
+            helperNodes.length
         );
     }
-
-    const helperNodes = buildRuntimeHelpers(literalResult.runtimeOptions);
-    insertHelperStatements(ast, helperNodes);
-    const helperBindingPass =
-        config.features.randomized_unique_identifiers && executionWrapperMode === null
-            ? renameBindings(ast, names)
-            : 0;
 
     const { code } = generate(ast, {
         comments: false,

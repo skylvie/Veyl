@@ -7,7 +7,7 @@
         "booleans": { "enabled": false, "method": "number", "number": 12345, "depth": null }
     },
     "features": {
-        "randomized_unique_identifiers": false,
+        "randomized_unique_identifiers": true,
         "unnecessary_depth": false,
         "dead_code_injection": false,
         "control_flow_flattening": false,

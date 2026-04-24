@@ -1,6 +1,7 @@
 import * as t from "@babel/types";
 import type { StringObfuscationMethod } from "@skylvi/veyl-config";
 import { generate } from "../../babel/interop.js";
+import { syncRuntimeHelpers } from "../../runtime/syncRuntimeHelpers.js";
 import type { RuntimeHelperOptions } from "../../types/runtime.js";
 import type { NameGenerator } from "../../utils/random.js";
 import { addWrappedBodyString } from "./bodyString.js";
@@ -52,7 +53,8 @@ export function wrapProgramWithBrowserExecutionMode(
     names: NameGenerator,
     runtimeOptions: RuntimeHelperOptions,
     config: BrowserExecutionWrapperConfig,
-    mode: BrowserExecutionWrapperMode
+    mode: BrowserExecutionWrapperMode,
+    preservedStatementCount = 0
 ): number {
     if (
         config.features.encryption.public_key !== null ||
@@ -74,7 +76,11 @@ export function wrapProgramWithBrowserExecutionMode(
     }
 
     const imports = program.body.slice(0, importCount);
-    const bodyStatements = program.body.slice(importCount);
+    const preservedStatements = program.body.slice(
+        importCount,
+        importCount + preservedStatementCount
+    );
+    const bodyStatements = program.body.slice(importCount + preservedStatementCount);
 
     if (bodyStatements.length === 0) {
         return 0;
@@ -89,6 +95,7 @@ export function wrapProgramWithBrowserExecutionMode(
         compact: false,
     }).code;
     const bodyStringExpression = addWrappedBodyString(runtimeOptions, names, bodyCode, config);
+    syncRuntimeHelpers(preservedStatements, runtimeOptions);
     const importBindingNames = collectTopLevelBindingNames(imports);
     const runtimeBindingNames = collectRuntimeBindingNames(runtimeOptions);
     const functionParamNames = [...importBindingNames, ...runtimeBindingNames];
@@ -96,6 +103,7 @@ export function wrapProgramWithBrowserExecutionMode(
     if (mode === "functionify") {
         program.body = [
             ...imports,
+            ...preservedStatements,
             t.expressionStatement(
                 t.callExpression(
                     t.newExpression(t.identifier("Function"), [
@@ -112,6 +120,7 @@ export function wrapProgramWithBrowserExecutionMode(
 
     program.body = [
         ...imports,
+        ...preservedStatements,
         t.expressionStatement(t.callExpression(t.identifier("eval"), [bodyStringExpression])),
     ];
 
@@ -160,6 +169,10 @@ function collectRuntimeBindingNames(runtimeOptions: RuntimeHelperOptions): strin
 
         if (runtimeOptions.strings.tableName !== undefined) {
             names.push(runtimeOptions.strings.tableName);
+        }
+
+        if (runtimeOptions.strings.orderTableName !== undefined) {
+            names.push(runtimeOptions.strings.orderTableName);
         }
 
         if (runtimeOptions.strings.accessorName !== undefined) {

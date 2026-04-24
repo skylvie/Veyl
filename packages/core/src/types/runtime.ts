@@ -7,6 +7,7 @@ export interface RuntimeHelperOptions {
         unicodeEscapeSequence: boolean;
         decoderName: string;
         tableName?: string;
+        orderTableName?: string;
         accessorName?: string;
         encodedTable?: string[][];
         orderTable?: number[][];

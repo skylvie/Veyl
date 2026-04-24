@@ -14,6 +14,7 @@ export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[
         if (options.strings.method === "array") {
             if (
                 options.strings.tableName === undefined ||
+                options.strings.orderTableName === undefined ||
                 options.strings.accessorName === undefined ||
                 options.strings.encodedTable === undefined
             ) {
@@ -23,6 +24,7 @@ export function buildRuntimeHelpers(options: RuntimeHelperOptions): t.Statement[
             statements.push(
                 ...buildStringTableRuntimeHelpers(
                     options.strings.tableName,
+                    options.strings.orderTableName,
                     options.strings.accessorName,
                     options.strings.decoderName,
                     options.strings.encodedTable,
